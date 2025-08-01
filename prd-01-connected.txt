@@ -1,0 +1,365 @@
+# Product Requirements Document (PRD) - Connected Version
+## Network Automation Application with GENAI
+
+### 1. Overview
+This document outlines the requirements for a network automation application that leverages GENAI, LLMs, and agentic AI to automate Cisco network operations. The application will support Cisco IOS, IOSXR, and IOSXE devices with dummy devices (R15-R25) for testing purposes.
+
+This version of the PRD focuses on connecting the frontend to the backend and ensuring proper data flow between components.
+
+Last updated: 2025-07-31
+
+### 2. Product Purpose
+To provide network engineers with an intelligent automation platform that can generate, validate, and deploy network configurations while also performing audits, troubleshooting, and baseline analysis using GENAI capabilities, with a fully connected frontend and backend.
+
+### 3. Key Features and Task List
+
+#### 3.1 Dashboard Integration
+- [x] Connect frontend dashboard to backend API endpoints
+- [x] Display real device summary data from backend
+- [ ] Display real alert summary data from backend (currently using dummy data) - Need to implement alerts table and query logic. Create alerts table in database with fields for id, severity, message, timestamp, device_id (FK), and resolved status. Update dashboard service to query this table instead of returning dummy data.
+- [x] Display real task summary data from backend
+- [x] Display real system metrics data from backend
+- [ ] Display real recent activities from backend (currently using dummy data) - Need to implement activities table and query logic. Create activities table in database with fields for id, description, timestamp, user_id (FK), and device_id (FK). Update dashboard service to query this table instead of returning dummy data.
+- [ ] Display real resource usage data from backend (currently using dummy data) - Need to implement metrics table and query logic. Create metrics table in database with fields for id, timestamp, cpu_usage, memory_usage, disk_usage, network_in, network_out, and device_id (FK). Update dashboard service to query this table instead of generating dummy data.
+
+#### 3.2 Device Management Integration
+- [x] Connect frontend device management to backend API
+- [x] Implement device listing with real data from backend
+- [x] Implement device creation functionality
+- [x] Implement device editing functionality
+- [x] Implement device deletion functionality
+- [x] Implement device polling functionality
+- [x] Implement device ping testing functionality
+
+#### 3.3 Settings Management Integration
+- [x] Connect frontend settings to backend API
+- [ ] Implement LLM settings management UI - Create forms for LLM provider selection and configuration. Design UI with dropdown for provider selection (OpenAI, Groq, OpenRouter), input fields for API keys, model selection, temperature control, and max tokens setting.
+- [ ] Implement API key management UI - Create secure forms for adding, editing, and deleting API keys. Design UI with table view of existing keys, modal forms for adding/editing keys, and secure input handling with masking.
+- [ ] Connect settings UI to backend endpoints - Implement API calls to /api/settings endpoints. Create JavaScript functions to GET current settings, PUT updated LLM settings, and POST/PUT/DELETE API keys using fetch API.
+
+#### 3.4 GENAI Network Automation
+- [ ] Implement configuration generation using natural language prompts - Integrate with LLM providers to convert natural language to network configurations
+- [ ] Implement configuration validation and cleaning - Develop parsing and validation logic for network configurations
+- [ ] Implement secure deployment of validated configurations - Implement SSH/Telnet connectivity for configuration deployment
+- [ ] Implement confirmation of successful pushes - Add verification mechanisms to confirm configuration deployment
+- [ ] Create frontend UI for GENAI Automation - Design and implement user interface for configuration generation workflow
+- [ ] Connect GENAI Automation UI to backend endpoints - Implement API calls to network automation endpoints
+
+#### 3.5 GENAI Network Operations
+- [ ] Implement network audit capabilities - Develop audit logic to scan network devices for compliance and security issues
+- [ ] Implement intelligent troubleshooting assistance - Integrate with LLM providers to analyze network issues and suggest solutions
+- [ ] Implement network baseline creation and comparison - Implement functionality to capture and compare network states over time
+- [ ] Implement performance analysis - Develop metrics collection and analysis for network performance
+- [ ] Create frontend UI for GENAI Operations - Design and implement user interface for network operations workflow
+- [ ] Connect GENAI Operations UI to backend endpoints - Implement API calls to network operations endpoints
+
+#### 3.6 Chat Interface
+- [ ] Implement agentic AI interactions - Develop multi-agent workflows for complex chat interactions
+- [ ] Implement Retrieval-Augmented Generation (RAG) support - Integrate document retrieval with LLM responses
+- [ ] Implement conversation memory retention - Implement session storage for conversation history
+- [ ] Implement context-aware responses - Develop context tracking and injection for relevant responses
+- [ ] Create frontend UI for Chat interface - Design and implement chat user interface with message history
+- [ ] Connect Chat UI to backend endpoints - Implement API calls to chat endpoints
+
+#### 3.7 Authentication and Authorization
+- [ ] Implement frontend authentication flow - Create login/register forms and session management
+- [ ] Connect authentication to backend JWT system - Implement API calls to /api/auth endpoints
+- [ ] Implement role-based access control in frontend - Add user role checks and conditional rendering
+
+#### 3.8 Network Connectivity Layer
+- [ ] Implement SSH support via Python Netmiko - Integrate Netmiko library for secure SSH connections to network devices
+- [ ] Implement Telnet support via Python libraries - Integrate telnetlib or similar for Telnet connections to legacy devices
+- [ ] Integrate Cisco Genie with PyATS for configuration parsing - Implement parsing logic for Cisco device outputs
+- [ ] Implement Nonir modules for additional network operations - Integrate third-party libraries for extended network functionality
+- [ ] Create connection management system - Develop connection pooling and lifecycle management
+- [ ] Implement device interaction capabilities - Create abstraction layer for consistent device operations
+
+#### 3.9 AI/LLM Integration
+- [ ] Implement primary OpenAI API integration - Integrate OpenAI SDK for GPT model access
+- [ ] Implement Groq API integration - Integrate Groq SDK for fast LLM inference
+- [ ] Implement OpenRouter API integration - Integrate OpenRouter SDK for model routing
+- [ ] Integrate CrewAI framework - Implement multi-agent workflows using CrewAI
+- [ ] Integrate LangChain framework - Implement chain-based processing with LangChain
+- [ ] Integrate LangGraph framework - Implement graph-based workflows with LangGraph
+- [ ] Implement RAG capabilities - Integrate vector databases for document retrieval
+- [ ] Implement provider abstraction layer - Create abstraction layer for multiple LLM providers
+
+#### 3.10 Testing and Quality Assurance
+- [ ] Implement unit tests for frontend components - Write Jest tests for frontend UI components
+- [ ] Implement integration tests for frontend-backend communication - Write tests for API endpoint integration
+- [ ] Implement end-to-end tests for user workflows - Write Cypress tests for complete user journeys
+- [ ] Implement performance tests - Write tests to measure API response times and frontend load times
+- [ ] Implement security tests - Write tests for authentication, authorization, and vulnerability scanning
+
+#### 3.11 Deployment and Operations
+- [ ] Update Docker configuration for connected application - Modify docker-compose.yml to support frontend-backend communication
+- [ ] Implement monitoring and logging - Integrate monitoring tools and centralized logging
+- [ ] Implement alerting system - Set up notification mechanisms for system events
+- [ ] Prepare production deployment package - Create deployment scripts and documentation
+
+### 4. Task Priorities
+
+#### High Priority (Must be completed first)
+1. Connect frontend dashboard to backend API endpoints
+2. Replace dummy data with real data in dashboard endpoints
+3. Implement frontend authentication flow
+4. Connect authentication to backend JWT system
+
+#### Medium Priority (Important for core functionality)
+1. Implement LLM settings management UI
+2. Implement API key management UI
+3. Connect settings UI to backend endpoints
+4. Implement device management UI
+5. Connect device management UI to backend endpoints
+
+#### Low Priority (Enhancements and advanced features)
+1. Implement GENAI Network Automation features
+2. Implement GENAI Network Operations features
+3. Implement Chat interface
+4. Implement AI/LLM integration
+5. Implement Network Connectivity Layer
+
+### 5. Task Dependencies
+
+#### Dashboard Integration Dependencies
+- Frontend dashboard depends on backend dashboard endpoints
+- Backend dashboard endpoints depend on database models
+- Real alert summary depends on alerts table implementation
+- Real recent activities depend on activities table implementation
+- Real resource usage depends on metrics table implementation
+
+#### Device Management Dependencies
+- Frontend device management depends on backend device endpoints
+- Backend device endpoints depend on device database model
+- Device polling depends on network connectivity layer
+- Device ping testing depends on network connectivity layer
+
+#### Settings Management Dependencies
+- Frontend settings depends on backend settings endpoints
+- Backend settings endpoints depend on LLMSettings and APIKeys database models
+
+#### GENAI Features Dependencies
+- GENAI Network Automation depends on AI/LLM integration
+- GENAI Network Operations depends on AI/LLM integration and Network Connectivity Layer
+- Chat Interface depends on AI/LLM integration
+- All GENAI features depend on settings management for LLM configuration
+
+#### Authentication Dependencies
+- Frontend authentication depends on backend authentication endpoints
+- Backend authentication depends on User database model
+- All protected features depend on authentication implementation
+
+#### Network Connectivity Dependencies
+- Network Connectivity Layer depends on Netmiko, PyATS, and Genie libraries
+- Device interaction capabilities depend on Network Connectivity Layer
+- GENAI Network Operations depend on Network Connectivity Layer
+
+#### AI/LLM Integration Dependencies
+- AI/LLM integration depends on OpenAI, Groq, and OpenRouter APIs
+- CrewAI, LangChain, and LangGraph integrations depend on AI/LLM integration
+- RAG implementation depends on AI/LLM integration
+- All GENAI features depend on AI/LLM integration
+
+### 6. Progress Tracker
+
+#### Completed Tasks
+- [x] Project structure and architecture
+- [x] Database schema implementation
+- [x] Authentication system with JWT tokens
+- [x] Device management CRUD operations
+- [x] Basic dashboard with summary cards and activity timeline
+- [x] Frontend UI with navigation sidebar and responsive design
+- [x] Docker configuration for deployment
+- [x] Database initialization script with sample data
+- [x] Backend API framework with FastAPI
+- [x] Basic logging and error handling
+- [x] Environment configuration management
+- [x] Secure storage of API keys and credentials
+- [x] HTTPS support via Nginx reverse proxy
+- [x] Input validation on endpoints
+- [x] CORS policies configuration
+- [x] Connect frontend dashboard to backend API endpoints
+- [x] Display real device summary data from backend
+- [x] Display real task summary data from backend
+- [x] Display real system metrics data from backend
+- [x] Connect frontend device management to backend API
+- [x] Implement device listing with real data from backend
+- [x] Implement device creation functionality
+- [x] Implement device editing functionality
+- [x] Implement device deletion functionality
+- [x] Implement device polling functionality
+- [x] Implement device ping testing functionality
+
+#### In Progress Tasks
+- [ ] Display real alert summary data from backend (currently using dummy data) - Need to implement alerts table and query logic. Create alerts table in database with fields for id, severity, message, timestamp, device_id (FK), and resolved status. Update dashboard service to query this table instead of returning dummy data.
+- [ ] Display real recent activities from backend (currently using dummy data) - Need to implement activities table and query logic. Create activities table in database with fields for id, description, timestamp, user_id (FK), and device_id (FK). Update dashboard service to query this table instead of returning dummy data.
+- [ ] Display real resource usage data from backend (currently using dummy data) - Need to implement metrics table and query logic. Create metrics table in database with fields for id, timestamp, cpu_usage, memory_usage, disk_usage, network_in, network_out, and device_id (FK). Update dashboard service to query this table instead of generating dummy data.
+- [ ] Implement LLM settings management UI - Create forms for LLM provider selection and configuration. Design UI with dropdown for provider selection (OpenAI, Groq, OpenRouter), input fields for API keys, model selection, temperature control, and max tokens setting.
+- [ ] Implement API key management UI - Create secure forms for adding, editing, and deleting API keys. Design UI with table view of existing keys, modal forms for adding/editing keys, and secure input handling with masking.
+- [ ] Connect settings UI to backend endpoints - Implement API calls to /api/settings endpoints. Create JavaScript functions to GET current settings, PUT updated LLM settings, and POST/PUT/DELETE API keys using fetch API.
+
+#### Not Started Tasks
+- [ ] Implement configuration generation using natural language prompts - Integrate with LLM providers to convert natural language to network configurations
+- [ ] Implement configuration validation and cleaning - Develop parsing and validation logic for network configurations
+- [ ] Implement secure deployment of validated configurations - Implement SSH/Telnet connectivity for configuration deployment
+- [ ] Implement confirmation of successful pushes - Add verification mechanisms to confirm configuration deployment
+- [ ] Create frontend UI for GENAI Automation - Design and implement user interface for configuration generation workflow
+- [ ] Connect GENAI Automation UI to backend endpoints - Implement API calls to network automation endpoints
+- [ ] Implement network audit capabilities - Develop audit logic to scan network devices for compliance and security issues
+- [ ] Implement intelligent troubleshooting assistance - Integrate with LLM providers to analyze network issues and suggest solutions
+- [ ] Implement network baseline creation and comparison - Implement functionality to capture and compare network states over time
+- [ ] Implement performance analysis - Develop metrics collection and analysis for network performance
+- [ ] Create frontend UI for GENAI Operations - Design and implement user interface for network operations workflow
+- [ ] Connect GENAI Operations UI to backend endpoints - Implement API calls to network operations endpoints
+- [ ] Implement agentic AI interactions - Develop multi-agent workflows for complex chat interactions
+- [ ] Implement Retrieval-Augmented Generation (RAG) support - Integrate document retrieval with LLM responses
+- [ ] Implement conversation memory retention - Implement session storage for conversation history
+- [ ] Implement context-aware responses - Develop context tracking and injection for relevant responses
+- [ ] Create frontend UI for Chat interface - Design and implement chat user interface with message history
+- [ ] Connect Chat UI to backend endpoints - Implement API calls to chat endpoints
+- [ ] Implement frontend authentication flow - Create login/register forms and session management
+- [ ] Connect authentication to backend JWT system - Implement API calls to /api/auth endpoints
+- [ ] Implement role-based access control in frontend - Add user role checks and conditional rendering
+- [ ] Implement SSH support via Python Netmiko - Integrate Netmiko library for secure SSH connections to network devices
+- [ ] Implement Telnet support via Python libraries - Integrate telnetlib or similar for Telnet connections to legacy devices
+- [ ] Integrate Cisco Genie with PyATS for configuration parsing - Implement parsing logic for Cisco device outputs
+- [ ] Implement Nonir modules for additional network operations - Integrate third-party libraries for extended network functionality
+- [ ] Create connection management system - Develop connection pooling and lifecycle management
+- [ ] Implement device interaction capabilities - Create abstraction layer for consistent device operations
+- [ ] Implement primary OpenAI API integration - Integrate OpenAI SDK for GPT model access
+- [ ] Implement Groq API integration - Integrate Groq SDK for fast LLM inference
+- [ ] Implement OpenRouter API integration - Integrate OpenRouter SDK for model routing
+- [ ] Integrate CrewAI framework - Implement multi-agent workflows using CrewAI
+- [ ] Integrate LangChain framework - Implement chain-based processing with LangChain
+- [ ] Integrate LangGraph framework - Implement graph-based workflows with LangGraph
+- [ ] Implement RAG capabilities - Integrate vector databases for document retrieval
+- [ ] Implement provider abstraction layer - Create abstraction layer for multiple LLM providers
+- [ ] Implement unit tests for frontend components - Write Jest tests for frontend UI components
+- [ ] Implement integration tests for frontend-backend communication - Write tests for API endpoint integration
+- [ ] Implement end-to-end tests for user workflows - Write Cypress tests for complete user journeys
+- [ ] Implement performance tests - Write tests to measure API response times and frontend load times
+- [ ] Implement security tests - Write tests for authentication, authorization, and vulnerability scanning
+- [ ] Update Docker configuration for connected application - Modify docker-compose.yml to support frontend-backend communication
+- [ ] Implement monitoring and logging - Integrate monitoring tools and centralized logging
+- [ ] Implement alerting system - Set up notification mechanisms for system events
+- [ ] Prepare production deployment package - Create deployment scripts and documentation
+
+### 7. Technical Requirements
+
+#### 7.1 Frontend-Backend Communication
+- All frontend components must communicate with backend via RESTful API
+- JSON format for data exchange
+- Proper error handling and status code management
+- Authentication tokens for protected endpoints
+
+#### 7.2 Data Consistency
+- Frontend data must be synchronized with backend database
+- Real-time updates where appropriate
+- Proper handling of concurrent modifications
+- Data validation on both frontend and backend
+
+#### 7.3 Performance Requirements
+- API response time < 100ms for 95% of requests
+- Page load times < 3 seconds
+- Efficient data loading with pagination for large datasets
+- Caching for frequently accessed data
+
+#### 7.4 Security Requirements
+- Secure storage of API keys and credentials
+- Encrypted communication channels (HTTPS)
+- Role-based access control
+- Audit logging for all operations
+- Input validation and sanitization
+- Protection against common web vulnerabilities (XSS, CSRF, etc.)
+
+### 8. User Interface Requirements
+
+#### 8.1 Dashboard
+- Real-time display of device status
+- Visual representation of system metrics
+- Recent activities timeline
+- Quick action buttons
+- Responsive design for various screen sizes
+
+#### 8.2 Device Management
+- Data tables with sorting and filtering capabilities
+- Modal dialogs for add/edit operations
+- Form validation with real-time feedback
+- Status indicators with color coding
+- Bulk operation support
+
+#### 8.3 Settings Management
+- Form components with validation
+- Toggle switches for boolean settings
+- Slider controls for numeric parameters
+- Secure input fields for API keys
+- Real-time validation of settings
+
+#### 8.4 GENAI Features
+- Code editor component for configuration display
+- Tabbed interface for different workflow stages
+- Progress indicators for long-running operations
+- Syntax highlighting for network configurations
+- Collapsible sections for audit results
+- Severity-based color coding for issues
+- Interactive charts for performance data
+- Export functionality for reports
+
+#### 8.5 Chat Interface
+- Scrollable chat history display
+- Different styling for user vs assistant messages
+- Real-time typing indicators
+- Context-aware suggestion system
+- File attachment support
+
+### 9. Implementation Roadmap
+
+#### Phase 1: Frontend-Backend Integration (Weeks 1-2)
+- Complete dashboard integration with real data
+- Implement settings management UI
+- Connect settings UI to backend endpoints
+- Implement frontend authentication flow
+
+#### Phase 2: Core Feature Development (Weeks 3-6)
+- Implement GENAI Network Automation features
+- Implement GENAI Network Operations capabilities
+- Implement Chat interface
+- Develop Network Connectivity Layer
+
+#### Phase 3: AI/LLM Integration (Weeks 7-9)
+- Implement LLM provider abstraction
+- Integrate OpenAI, Groq, and OpenRouter APIs
+- Develop agentic AI capabilities with CrewAI, LangChain, LangGraph
+- Implement RAG functionality
+
+#### Phase 4: Testing and Quality Assurance (Weeks 10-11)
+- Implement comprehensive testing for all features
+- Conduct performance testing
+- Conduct security testing
+- Fix bugs and issues
+
+#### Phase 5: Deployment and Release (Weeks 12)
+- Prepare production deployment
+- Conduct final testing
+- Create deployment documentation
+- Release connected version
+
+### 10. Success Metrics
+
+#### Technical Metrics
+- 95% test coverage
+- <100ms API response time for 95% of requests
+- 99.5% uptime for core services
+- <500ms configuration generation time
+
+#### User Experience Metrics
+- <3 second page load times
+- 90% user satisfaction rating
+- <2% error rate in user interactions
+- 80% task completion rate
+
+#### Business Metrics
+- 50 active users within first month
+- 90% retention rate after 3 months
+- 1000 configurations generated per month
+- 50 audits performed per month

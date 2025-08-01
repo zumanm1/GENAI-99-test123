@@ -1,0 +1,39 @@
+# Frontend-Backend Integration: Progress Tracker
+
+## Phase 1: Dashboard Data Integration
+
+- [x] **FE-01**: Create a JavaScript function to fetch data from the `/api/v1/dashboard/overview` endpoint.
+- [x] **FE-02**: Dynamically populate the 'Devices' summary card.
+- [x] **FE-03**: Dynamically populate the 'Alerts' summary card.
+- [x] **FE-04**: Dynamically populate the 'Tasks' summary card.
+- [x] **FE-05**: Dynamically render the 'Recent Activity' list.
+
+## Phase 2: User and Actions Integration
+
+- [x] **BE-01**: Create a `/api/v1/users/me` endpoint.
+- [x] **FE-06**: Fetch and display the current user's name and avatar.
+- [x] **BE-02**: Define and create backend endpoints for 'Quick Actions'.
+- [x] **FE-07**: Connect 'Quick Action' buttons to backend endpoints.
+
+## Phase 3: Device Management
+
+- [x] **BE-03**: Create a `/api/v1/devices` endpoint.
+- [x] **FE-08**: Create a new `devices.html` page to display a list of devices.
+
+## Phase 4: Device CRUD Operations
+
+- [x] **FE-09**: Add a "Create Device" button and modal to the devices page.
+- [x] **FE-10**: Connect the "Create Device" form to the `POST /api/v1/devices` endpoint.
+- [x] **FE-11**: Implement the "Edit" button to open a pre-filled modal for updates.
+- [x] **FE-12**: Connect the "Edit Device" form to the `PUT /api/v1/devices/{id}` endpoint.
+- [x] **FE-13**: Implement the "Delete" button with a confirmation dialog.
+- [x] **FE-14**: Connect the "Delete" functionality to the `DELETE /api/v1/devices/{id}` endpoint.
+
+## Phase 5: Network Connectivity & Status Polling
+
+- [x] **FE-15**: Add "Poll Status" and "Ping" buttons to the device list actions.
+- [x] **FE-16**: Add a "Poll All Devices" button to the device list header.
+- [x] **FE-17**: Connect the "Poll Status" button to the `POST /api/v1/devices/{id}/poll` endpoint and update the device status in the table.
+- [x] **FE-18**: Connect the "Poll All Devices" button to the `POST /api/v1/devices/poll` endpoint and update all device statuses.
+- [x] **BE-04**: Create a new `POST /api/v1/devices/{id}/ping` endpoint for checking device reachability.
+- [x] **FE-19**: Connect the "Ping" button to the new ping endpoint and display the result.

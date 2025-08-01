@@ -1,0 +1,43 @@
+# PRD: Frontend-Backend Integration
+
+## 1. Overview
+
+This document outlines the tasks required to connect the frontend dashboard to the backend API, migrating from mocked data to live data. The goal is to create a fully dynamic and interactive dashboard experience.
+
+## 2. Connection Analysis
+
+### Current State:
+- **Frontend (`index.html`)**: Fully static with hardcoded values for all metrics, summaries, and activity lists.
+- **Backend (`/dashboard` routes)**: Partially implemented. A key data aggregation endpoint (`/overview`) exists and provides the necessary data structure.
+
+### Frontend to Backend Mapping:
+
+| Frontend Component    | Mocked Data Location (in `index.html`) | Target Backend Endpoint        | Backend Data Schema                  |
+|-----------------------|----------------------------------------|--------------------------------|--------------------------------------|
+| Devices Summary Card  | Lines 351, 353-354                     | `GET /api/v1/dashboard/overview` | `DashboardOverview.device_summary`   |
+| Alerts Summary Card   | Lines 365, 367-368                     | `GET /api/v1/dashboard/overview` | `DashboardOverview.alert_summary`    |
+| Tasks Summary Card    | Lines 379, 381-382                     | `GET /api/v1/dashboard/overview` | `DashboardOverview.task_summary`     |
+| Recent Activity List  | Lines 391-400+                         | `GET /api/v1/dashboard/overview` | `DashboardOverview.recent_activities`|
+| User Info             | Lines 337-338                          | `GET /api/v1/users/me` (TBD)     | `User` schema (TBD)                  |
+| Quick Action Buttons  | Lines 249+                             | Various endpoints (TBD)        | Various schemas (TBD)                |
+
+## 3. Task List
+
+### Phase 1: Dashboard Data Integration (High Priority)
+
+| Task ID | Task Description                                                              | Priority | Dependencies | Status      |
+|---------|-------------------------------------------------------------------------------|----------|--------------|-------------|
+| FE-01   | Create a JavaScript function to fetch data from the `/api/v1/dashboard/overview` endpoint. | High     | None         | Not Started |
+| FE-02   | Dynamically populate the 'Devices' summary card with data from the API call.  | High     | FE-01        | Not Started |
+| FE-03   | Dynamically populate the 'Alerts' summary card with data from the API call.   | High     | FE-01        | Not Started |
+| FE-04   | Dynamically populate the 'Tasks' summary card with data from the API call.    | High     | FE-01        | Not Started |
+| FE-05   | Dynamically render the 'Recent Activity' list with data from the API call.    | High     | FE-01        | Not Started |
+
+### Phase 2: User and Actions Integration (Medium Priority)
+
+| Task ID | Task Description                                                              | Priority | Dependencies | Status      |
+|---------|-------------------------------------------------------------------------------|----------|--------------|-------------|
+| BE-01   | Create a `/api/v1/users/me` endpoint to return the current user's data.       | Medium   | None         | Not Started |
+| FE-06   | Fetch and display the current user's name and avatar in the header.           | Medium   | BE-01        | Not Started |
+| BE-02   | Define and create backend endpoints for the 'Quick Action' buttons.           | Medium   | None         | Not Started |
+| FE-07   | Connect the 'Quick Action' buttons to their respective backend endpoints.     | Medium   | BE-02        | Not Started |

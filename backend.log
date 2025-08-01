@@ -1,0 +1,40 @@
+/home/test/Documents/GENAI-99-test123/main.py:19: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+INFO:     Started server process [583776]
+INFO:     Waiting for application startup.
+ERROR:    Traceback (most recent call last):
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/starlette/routing.py", line 677, in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/starlette/routing.py", line 566, in __aenter__
+    await self._router.startup()
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/starlette/routing.py", line 656, in startup
+    handler()
+  File "/home/test/Documents/GENAI-99-test123/main.py", line 40, in startup_event
+    llm_manager.add_provider("groq", groq_settings)
+  File "/home/test/Documents/GENAI-99-test123/backend/ai/llm_manager.py", line 31, in add_provider
+    provider_instance = LLMFactory.create_llm(provider=settings.provider, **settings.to_dict())
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/backend/ai/llm_providers.py", line 115, in create_llm
+    return GroqProvider(**filtered_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/backend/ai/llm_providers.py", line 69, in __init__
+    self.client = Groq(api_key=api_key)
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/groq/_client.py", line 99, in __init__
+    super().__init__(
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/groq/_base_client.py", line 824, in __init__
+    self._client = http_client or SyncHttpxClientWrapper(
+                                  ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/groq/_base_client.py", line 722, in __init__
+    super().__init__(**kwargs)
+TypeError: Client.__init__() got an unexpected keyword argument 'proxies'
+
+ERROR:    Application startup failed. Exiting.
+Initializing LLM providers...
+Found OpenAI API key. Configuring provider...
+Found Groq API key. Configuring provider...

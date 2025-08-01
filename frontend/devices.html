@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Management - NetworkAI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css"> <!-- Assuming a shared stylesheet -->
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <h1>Network<span>AI</span></h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+                <li><a href="/devices"><i class="fas fa-server"></i> <span>Devices</span></a></li>
+                <li><a href="/genai"><i class="fas fa-robot"></i> <span>GENAI Automation</span></a></li>
+                <li><a href="#"><i class="fas fa-network-wired"></i> <span>GENAI Operations</span></a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> <span>Settings</span></a></li>
+                <li><a href="#"><i class="fas fa-comments"></i> <span>Chat</span></a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h2>Device Management</h2>
+                <div class="user-info">
+                    <img src="https://ui-avatars.com/api/?name=A&background=3498db&color=fff" alt="User" id="user-avatar">
+                    <span id="user-name">Admin User</span>
+                </div>
+            </div>
+
+            <!-- Device List Table -->
+            <div class="device-list-container">
+                <div class="device-list-header">
+                    <h3 class="section-title">All Devices</h3>
+                    <div>
+                        <button id="poll-all-btn" class="action-btn btn-secondary"><i class="fas fa-sync-alt"></i> Poll All</button>
+                        <button id="create-device-btn" class="action-btn"><i class="fas fa-plus"></i> Create Device</button>
+                    </div>
+                </div>
+                <table class="device-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>IP Address</th>
+                            <th>Device Type</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="device-list-body">
+                        <!-- Device rows will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<div id="device-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2 id="modal-title">Create New Device</h2>
+            <form id="device-form">
+                <input type="hidden" id="device-id" name="device-id">
+                <div class="form-group">
+                    <label for="name">Device Name</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="ip_address">IP Address</label>
+                    <input type="text" id="ip_address" name="ip_address" required>
+                </div>
+                <div class="form-group">
+                    <label for="device_type">Device Type</label>
+                    <select id="device_type" name="device_type">
+                        <option value="ios">Cisco IOS</option>
+                        <option value="iosxe">Cisco IOS-XE</option>
+                        <option value="iosxr">Cisco IOS-XR</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="protocol">Protocol</label>
+                        <select id="protocol" name="protocol">
+                            <option value="ssh">SSH</option>
+                            <option value="telnet">Telnet</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="port">Port</label>
+                        <input type="number" id="port" name="port" value="22" required>
+                    </div>
+                </div>
+                <button type="submit" id="modal-submit-btn" class="action-btn">Create Device</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Modal elements
+        const modal = document.getElementById('device-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalSubmitBtn = document.getElementById('modal-submit-btn');
+        const deviceForm = document.getElementById('device-form');
+        const deviceIdInput = document.getElementById('device-id');
+        const createBtn = document.getElementById('create-device-btn');
+        const pollAllBtn = document.getElementById('poll-all-btn');
+        const closeBtn = document.querySelector('.close-btn');
+        const deviceListBody = document.getElementById('device-list-body');
+
+        // --- Modal Control ---
+        function openModal() { modal.style.display = 'block'; }
+        function closeModal() { modal.style.display = 'none'; }
+
+        createBtn.onclick = () => {
+            deviceForm.reset();
+            deviceIdInput.value = '';
+            modalTitle.textContent = 'Create New Device';
+            modalSubmitBtn.textContent = 'Create Device';
+            openModal();
+        };
+
+        closeBtn.onclick = closeModal;
+        window.onclick = (event) => {
+            if (event.target == modal) {
+                closeModal();
+            }
+        };
+
+        pollAllBtn.onclick = () => {
+            const button = pollAllBtn;
+            button.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Polling All...';
+            button.disabled = true;
+
+            fetch('http://localhost:8002/api/v1/devices/poll', { method: 'POST' })
+                .then(response => response.json())
+                .then(result => {
+                    console.log('Poll all result:', result);
+                    fetchAndDisplayDevices(); // Refresh the whole list
+                })
+                .catch(error => {
+                    console.error('Error polling all devices:', error);
+                    alert('Error polling all devices.');
+                })
+                .finally(() => {
+                    button.innerHTML = '<i class="fas fa-sync-alt"></i> Poll All';
+                    button.disabled = false;
+                });
+        };
+
+        // --- API and Data Handling ---
+        function fetchAndDisplayDevices() {
+            fetch('http://localhost:8002/api/v1/devices')
+                .then(response => response.json())
+                .then(devices => {
+                    deviceListBody.innerHTML = '';
+                    if (devices.length === 0) {
+                        deviceListBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No devices found.</td></tr>';
+                        return;
+                    }
+                    devices.forEach(device => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${device.name}</td>
+                            <td>${device.ip_address}</td>
+                            <td>${device.device_type}</td>
+                            <td class="status-cell"><span class="status-badge status-${device.status.toLowerCase()}">${device.status}</span></td>
+                            <td>
+                                <button class="action-btn-sm btn-info poll-btn" data-id="${device.id}">Poll</button>
+                                <button class="action-btn-sm btn-secondary ping-btn" data-id="${device.id}">Ping</button>
+                                <button class="action-btn-sm edit-btn" data-id="${device.id}">Edit</button>
+                                <button class="action-btn-sm btn-danger delete-btn" data-id="${device.id}">Delete</button>
+                            </td>
+                        `;
+                        deviceListBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching devices:', error);
+                    deviceListBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Error loading devices.</td></tr>';
+                });
+        }
+
+        deviceListBody.addEventListener('click', (event) => {
+            const target = event.target;
+
+            // Edit button logic
+            if (target.classList.contains('edit-btn')) {
+                const id = target.dataset.id;
+                fetch(`http://localhost:8002/api/v1/devices/${id}`)
+                    .then(response => response.json())
+                    .then(device => {
+                        deviceIdInput.value = device.id;
+                        document.getElementById('name').value = device.name;
+                        document.getElementById('ip_address').value = device.ip_address;
+                        document.getElementById('device_type').value = device.device_type;
+                        document.getElementById('username').value = device.username;
+                        document.getElementById('protocol').value = device.protocol;
+                        document.getElementById('port').value = device.port;
+                        document.getElementById('password').value = '';
+                        modalTitle.textContent = 'Edit Device';
+                        modalSubmitBtn.textContent = 'Update Device';
+                        openModal();
+                    });
+            }
+
+            // Delete button logic
+            if (target.classList.contains('delete-btn')) {
+                const id = target.dataset.id;
+                const deviceName = target.closest('tr').querySelector('td').textContent;
+                if (confirm(`Are you sure you want to delete the device "${deviceName}"?`)) {
+                    fetch(`http://localhost:8002/api/v1/devices/${id}`, { method: 'DELETE' })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(err => { throw new Error(err.detail || 'Failed to delete device') });
+                            }
+                            fetchAndDisplayDevices();
+                        })
+                        .catch(error => {
+                            console.error('Error deleting device:', error);
+                            alert('Error: ' + error.message);
+                        });
+                }
+            }
+
+            // Poll button logic
+            if (target.classList.contains('poll-btn')) {
+                const id = target.dataset.id;
+                target.textContent = 'Polling...';
+                target.disabled = true;
+                fetch(`http://localhost:8002/api/v1/devices/${id}/poll`, { method: 'POST' })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Poll request failed');
+                        return response.json();
+                    })
+                    .then(() => fetchAndDisplayDevices())
+                    .catch(error => {
+                        console.error('Error polling device:', error);
+                        alert('Error polling device.');
+                        fetchAndDisplayDevices();
+                    });
+            }
+
+            // Ping button logic
+            if (target.classList.contains('ping-btn')) {
+                const id = target.dataset.id;
+                const originalText = target.textContent;
+                target.textContent = 'Pinging...';
+                target.disabled = true;
+
+                fetch(`http://localhost:8002/api/v1/devices/${id}/ping`, { method: 'POST' })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.detail || 'Ping request failed') });
+                        }
+                        return response.json();
+                    })
+                    .then(result => {
+                        let message = `Ping to ${result.ip_address}:\n`;
+                        if (result.reachable) {
+                            message += `Success! Response time: ${result.response_time.toFixed(2)} ms.`;
+                        } else {
+                            message += `Failed. Reason: ${result.message}`;
+                        }
+                        alert(message);
+                    })
+                    .catch(error => {
+                        console.error('Error pinging device:', error);
+                        alert('Error: ' + error.message);
+                    })
+                    .finally(() => {
+                        target.textContent = originalText;
+                        target.disabled = false;
+                    });
+            }
+        });
+
+        deviceForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(deviceForm);
+            const deviceData = Object.fromEntries(formData.entries());
+            deviceData.port = parseInt(deviceData.port, 10);
+
+            const deviceId = deviceIdInput.value;
+            const isEdit = !!deviceId;
+            const url = isEdit ? `http://localhost:8002/api/v1/devices/${deviceId}` : 'http://localhost:8002/api/v1/devices';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            // For PUT, remove empty password field if not changed
+            if (isEdit && !deviceData.password) {
+                delete deviceData.password;
+            }
+
+            fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(deviceData),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.detail || `Failed to ${isEdit ? 'update' : 'create'} device`) });
+                }
+                return response.json();
+            })
+            .then(() => {
+                closeModal();
+                fetchAndDisplayDevices();
+            })
+            .catch(error => {
+                console.error(`Error ${isEdit ? 'updating' : 'creating'} device:`, error);
+                alert('Error: ' + error.message);
+            });
+        });
+
+        // --- Initial Load ---
+        fetch('/api/v1/users/me')
+            .then(response => response.json())
+            .then(user => {
+                document.getElementById('user-name').textContent = user.full_name || 'Admin User';
+                const avatar = document.getElementById('user-avatar');
+                if (user.full_name) {
+                    avatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name)}&background=3498db&color=fff`;
+                }
+            })
+            .catch(error => console.error('Error fetching user info:', error));
+
+        fetchAndDisplayDevices();
+    });
+</script>
+    <script>
+        // Set active navigation link based on current page
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('.nav-links a');
+            const currentPath = window.location.pathname;
+
+            navLinks.forEach(link => {
+                // Remove existing active class
+                link.classList.remove('active');
+
+                // Add active class if the link's href matches the current path
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

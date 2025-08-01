@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GENAI Automation - NetworkAI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <h1>Network<span>AI</span></h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+                <li><a href="/devices"><i class="fas fa-server"></i> <span>Devices</span></a></li>
+                <li><a href="/genai" class="active"><i class="fas fa-robot"></i> <span>GENAI Automation</span></a></li>
+                <li><a href="#"><i class="fas fa-network-wired"></i> <span>GENAI Operations</span></a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> <span>Settings</span></a></li>
+                <li><a href="#"><i class="fas fa-comments"></i> <span>Chat</span></a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h2>GENAI Automation</h2>
+                <div class="user-info">
+                    <img src="https://ui-avatars.com/api/?name=A&background=3498db&color=fff" alt="User" id="user-avatar">
+                    <span id="user-name">Admin User</span>
+                </div>
+            </div>
+
+            <!-- GENAI Content -->
+            <div class="genai-container">
+                <h3 class="section-title">Configuration Generator</h3>
+                <p>Use the form below to generate a network device configuration using AI.</p>
+                
+                <form id="genai-form" class="genai-form">
+                    <div class="form-group">
+                        <label for="requirements">Configuration Requirements</label>
+                        <textarea id="requirements" name="requirements" rows="8" placeholder="e.g., Configure a new VLAN 100 named 'Sales' and assign it to interface Gi0/1."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="device_type">Device Type</label>
+                        <select id="device_type" name="device_type">
+                            <option value="ios">Cisco IOS</option>
+                            <option value="iosxe">Cisco IOS-XE</option>
+                            <option value="iosxr">Cisco IOS-XR</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="generate-btn" class="action-btn"><i class="fas fa-cogs"></i> Generate Configuration</button>
+                </form>
+
+                <div id="results-container" class="results-container" style="display: none;">
+                    <h3 class="section-title">Generated Output</h3>
+                    <div id="loader" class="loader" style="display: none;"></div>
+                    <div id="results-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Navigation --- 
+        const navLinks = document.querySelectorAll('.nav-links a');
+        const currentPath = window.location.pathname;
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.add('active');
+            }
+        });
+
+        // --- User Info Loading ---
+        fetch('http://localhost:8002/api/v1/users/me')
+            .then(response => response.json())
+            .then(user => {
+                document.getElementById('user-name').textContent = user.full_name || 'Admin User';
+                const avatar = document.getElementById('user-avatar');
+                if (user.full_name) {
+                    avatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name)}&background=3498db&color=fff`;
+                }
+            })
+            .catch(error => console.error('Error fetching user info:', error));
+
+        // --- GENAI Form Handling ---
+        const genaiForm = document.getElementById('genai-form');
+        const generateBtn = document.getElementById('generate-btn');
+        const resultsContainer = document.getElementById('results-container');
+        const resultsContent = document.getElementById('results-content');
+        const loader = document.getElementById('loader');
+
+        genaiForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const requirements = document.getElementById('requirements').value;
+            const deviceType = document.getElementById('device_type').value;
+
+            if (!requirements.trim()) {
+                alert('Please enter the configuration requirements.');
+                return;
+            }
+
+            resultsContainer.style.display = 'block';
+            resultsContent.innerHTML = '';
+            loader.style.display = 'block';
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Generating...';
+
+            fetch('http://localhost:8002/api/v1/genai/config/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requirements, device_type: deviceType })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.detail || 'An unknown error occurred.') });
+                }
+                return response.json();
+            })
+            .then(data => {
+                loader.style.display = 'none';
+                resultsContent.innerHTML = `<pre><code>${JSON.stringify(data.result, null, 2)}</code></pre>`;
+            })
+            .catch(error => {
+                loader.style.display = 'none';
+                resultsContent.innerHTML = `<div class="error-message"><strong>Error:</strong> ${error.message}</div>`;
+            })
+            .finally(() => {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<i class="fas fa-cogs"></i> Generate Configuration';
+            });
+        });
+    });
+    </script>
+</body>
+</html>

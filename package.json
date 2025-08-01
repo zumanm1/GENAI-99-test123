@@ -1,0 +1,23 @@
+{
+  "name": "genai-99-test123",
+  "version": "1.0.0",
+  "description": "This is a comprehensive network automation application powered by a FastAPI backend and a static frontend. It is designed to be run natively using a Python virtual environment.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zumanm1/GENAI-99-test123.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zumanm1/GENAI-99-test123/issues"
+  },
+  "homepage": "https://github.com/zumanm1/GENAI-99-test123#readme",
+  "devDependencies": {
+    "puppeteer": "^24.15.0"
+  }
+}
