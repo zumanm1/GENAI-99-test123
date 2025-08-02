@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """
 Run script for the Network Automation Application
+
+DEVELOPMENT NOTE: 
+During development, DO NOT use Docker or Docker Compose!
+This script runs services directly using Python.
+Docker will be used only after successful development completion.
 """
 
 import os

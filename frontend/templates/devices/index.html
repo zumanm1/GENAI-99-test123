@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Devices - Network Automation Platform{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-1">Device Management</h1>
+        <p class="text-muted">Manage and monitor your network devices</p>
+    </div>
+    <div>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#add-device-modal">
+            <i data-lucide="plus-circle" class="me-1"></i>
+            Add Device
+        </button>
+    </div>
+</div>
+
+<table class="table table-hover">
+    <thead class="table-light">
+        <tr>
+            <th>Name</th>
+            <th>IP Address</th>
+            <th>Model</th>
+            <th>Status</th>
+            <th>Last Seen</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="device-list">
+        <!-- Device list will be populated here -->
+    </tbody>
+</table>
+
+<!-- Modals for device management -->
+<div class="modal fade" id="add-device-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Device</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-device-form">
+                    <div class="mb-3">
+                        <label for="device-name" class="form-label">Device Name</label>
+                        <input type="text" class="form-control" id="device-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ip-address" class="form-label">IP Address</label>
+                        <input type="text" class="form-control" id="ip-address" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="model" class="form-label">Model</label>
+                        <input type="text" class="form-control" id="model" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Device</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Get the device list on page load
+    async function fetchDeviceList() {
+        try {
+            const response = await fetch('/api/devices');
+            const devices = await response.json();
+            const deviceList = document.getElementById('device-list');
+            deviceList.innerHTML = '';
+
+            devices.forEach(device => {
+                const row = `<tr>
+                    <td>${device.name}</td>
+                    <td>${device.ip_address}</td>
+                    <td>${device.model}</td>
+                    <td><span class="badge bg-${device.status === 'online' ? 'success' : 'secondary'}">${device.status}</span></td>
+                    <td>${device.last_seen}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editDevice('${device.id}')"><i data-lucide="edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteDevice('${device.id}')"><i data-lucide="trash"></i></button>
+                    </td>
+                </tr>`;
+                deviceList.insertAdjacentHTML('beforeend', row);
+            });
+        } catch (error) {
+            console.error('Error fetching devices:', error);
+            showToast('Error loading devices', 'error');
+        }
+    }
+
+    document.getElementById('add-device-form').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const deviceName = document.getElementById('device-name').value;
+        const ipAddress = document.getElementById('ip-address').value;
+        const model = document.getElementById('model').value;
+
+        try {
+            const response = await fetch('/api/devices', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: deviceName,
+                    ip_address: ipAddress,
+                    model: model
+                })
+            });
+
+            if (response.ok) {
+                showToast('Device added successfully', 'success');
+                fetchDeviceList();
+                bootstrap.Modal.getInstance(document.getElementById('add-device-modal')).hide();
+            } else {
+                showToast('Error adding device', 'error');
+            }
+        } catch (error) {
+            console.error('Error adding device:', error);
+            showToast('Error adding device', 'error');
+        }
+    });
+
+    async function deleteDevice(deviceId) {
+        if (confirm('Are you sure you want to delete this device?')) {
+            try {
+                const response = await fetch(`/api/devices/${deviceId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showToast('Device deleted successfully', 'success');
+                    fetchDeviceList();
+                } else {
+                    showToast('Error deleting device', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting device:', error);
+                showToast('Error deleting device', 'error');
+            }
+        }
+    }
+
+    function showToast(message, type) {
+        const toastContainer = document.getElementById('toast-container');
+        const toastId = 'toast-' + Date.now();
+        const iconMap = {
+            success: 'check-circle',
+            error: 'x-circle',
+            warning: 'alert-triangle',
+            info: 'info'
+        };
+
+        const colorMap = {
+            success: 'text-bg-success',
+            error: 'text-bg-danger',
+            warning: 'text-bg-warning',
+            info: 'text-bg-primary'
+        };
+
+        const toastHtml = `
+            <div id="${toastId}" class="toast ${colorMap[type]}" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header ${colorMap[type]}">
+                    <i data-lucide="${iconMap[type]}" class="me-2"></i>
+                    <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, {
+            autohide: true,
+            delay: 5000
+        });
+
+        toast.show();
+        lucide.createIcons();
+
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', fetchDeviceList);
+</script>
+{% endblock %}
+

@@ -6,12 +6,13 @@ Test script to verify that the application is working correctly
 import requests
 import time
 import sys
+import pytest
 
 def test_api_endpoints():
     """
     Test API endpoints
     """
-    base_url = "http://localhost:8000"
+    base_url = "http://localhost:5000"
     
     print("Testing API endpoints...")
     
@@ -69,7 +70,7 @@ def test_auth_endpoints():
     """
     Test authentication endpoints
     """
-    base_url = "http://localhost:8000"
+    base_url = "http://localhost:5000"
     
     print("\nTesting authentication endpoints...")
     
@@ -90,19 +91,29 @@ def test_auth_endpoints():
         print(f"✗ Login endpoint failed: {e}")
         return None
 
+@pytest.fixture
+def token():
+    base_url = "http://localhost:5000"
+    login_data = {
+        "username": "admin",
+        "password": "admin123"
+    }
+    response = requests.post(f"{base_url}/api/v1/auth/login", json=login_data)
+    if response.status_code == 200:
+        return response.json().get("access_token")
+    else:
+        pytest.skip("Skipping because token could not be retrieved")
+
+
 def test_protected_endpoints(token):
     """
     Test protected endpoints with authentication token
     """
-    base_url = "http://localhost:8000"
+    base_url = "http://localhost:5000"
     headers = {"Authorization": f"Bearer {token}"}
-    
-    if not token:
-        print("No token provided, skipping protected endpoint tests")
-        return
-    
+
     print("\nTesting protected endpoints...")
-    
+
     # Test dashboard metrics endpoint
     try:
         response = requests.get(f"{base_url}/api/v1/dashboard/metrics", headers=headers)

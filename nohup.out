@@ -1,0 +1,42 @@
+Starting FastAPI application on port 5000
+Health endpoint available at: http://localhost:5000/health
+INFO:     Started server process [791528]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:5000 (Press CTRL+C to quit)
+INFO:     Started server process [791645]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+Initializing LLM providers...
+OpenAI API key not found or is a placeholder. Skipping.
+Groq API key not found or is a placeholder. Skipping.
+OpenRouter API key not found or is a placeholder. Skipping.
+INFO:     127.0.0.1:53662 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52698 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52710 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35528 - "GET /api/v1/dashboard/summary HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:35544 - "GET /api/network-operations/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45488 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55484 - "GET /devices HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42868 - "GET /genai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36664 - "GET /api/chat/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46790 - "GET /api/genai/status HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:46800 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59942 - "GET /api/v1/devices/list HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:38862 - "GET /api/v1/devices HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:47048 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38976 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47064 - "GET /api/network-operations/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47074 - "GET /api/chat/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38992 - "GET /devices HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38998 - "GET /genai HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47088 - "GET /docs HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [791528]
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [791645]

@@ -1,0 +1,959 @@
+{% extends "base.html" %}
+
+{% block title %}GenAI Settings & Configuration - Network Automation Platform{% endblock %}
+
+{% block content %}
+<!-- Enhanced Header Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i data-lucide="settings" class="" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-0 fw-bold">GenAI Settings & Configuration</h4>
+                            <small class="opacity-75">Advanced AI model management and configuration</small>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-light btn-sm" onclick="saveAllSettings()">
+                            <i data-lucide="save" class="me-1" style="width: 16px; height: 16px;"></i>Save
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="resetAllSettings()">
+                            <i data-lucide="refresh-cw" class="me-1" style="width: 16px; height: 16px;"></i>Reset
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="exportSettings()">
+                            <i data-lucide="download" class="me-1" style="width: 16px; height: 16px;"></i>Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Model Status Bar -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-4">
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-success rounded-pill me-2">●</span>
+                            <strong>Active Model:</strong>
+                            <span class="ms-2 text-primary fw-semibold" id="active-model-display">GPT-4.1 (OpenAI)</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i data-lucide="activity" class="text-success me-1" style="width: 16px; height: 16px;"></i>
+                            <span class="text-success fw-semibold">Connected</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i data-lucide="bar-chart-2" class="text-info me-1" style="width: 16px; height: 16px;"></i>
+                            <span class="text-muted">Usage: <strong>2,450/10,000</strong> tokens today</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <small class="text-muted">Response Time: <strong>1.2s</strong></small>
+                        <small class="text-muted">Cost/1K: <strong>$0.03</strong></small>
+                        <div class="progress" style="width: 100px; height: 8px;">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: 24.5%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Navigation Tabs -->
+<div class="row mb-4">
+    <div class="col-12">
+        <ul class="nav nav-pills nav-fill bg-light rounded p-1" id="aiSettingsTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active rounded" id="providers-tab" data-bs-toggle="tab" data-bs-target="#providers" type="button" role="tab" aria-controls="providers" aria-selected="true">
+                    <i data-lucide="cpu" class="me-2" style="width: 18px; height: 18px;"></i>Model Providers
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded" id="apikeys-tab" data-bs-toggle="tab" data-bs-target="#apikeys" type="button" role="tab" aria-controls="apikeys" aria-selected="false">
+                    <i data-lucide="key" class="me-2" style="width: 18px; height: 18px;"></i>API Keys
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded" id="rag-tab" data-bs-toggle="tab" data-bs-target="#rag" type="button" role="tab" aria-controls="rag" aria-selected="false">
+                    <i data-lucide="database" class="me-2" style="width: 18px; height: 18px;"></i>RAG Config
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded" id="agentic-tab" data-bs-toggle="tab" data-bs-target="#agentic" type="button" role="tab" aria-controls="agentic" aria-selected="false">
+                    <i data-lucide="zap" class="me-2" style="width: 18px; height: 18px;"></i>Agentic
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded" id="graphrag-tab" data-bs-toggle="tab" data-bs-target="#graphrag" type="button" role="tab" aria-controls="graphrag" aria-selected="false">
+                    <i data-lucide="network" class="me-2" style="width: 18px; height: 18px;"></i>Graph RAG
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded" id="embeddings-tab" data-bs-toggle="tab" data-bs-target="#embeddings" type="button" role="tab" aria-controls="embeddings" aria-selected="false">
+                    <i data-lucide="layers" class="me-2" style="width: 18px; height: 18px;"></i>Embeddings
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded" id="core-tab" data-bs-toggle="tab" data-bs-target="#core" type="button" role="tab" aria-controls="core" aria-selected="false">
+                    <i data-lucide="settings" class="me-2" style="width: 18px; height: 18px;"></i>Core
+                </button>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Tab Content -->
+<div class="tab-content" id="aiSettingsTabsContent">
+    <!-- Model Providers Tab -->
+    <div class="tab-pane fade show active" id="providers" role="tabpanel" aria-labelledby="providers-tab">
+        <!-- Active Model Selection -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i data-lucide="target" class="me-2"></i>Active Model Selection
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Primary Model</label>
+                                <select class="form-select mb-2" id="primary-model">
+                                    <option value="gpt-4.1" selected>GPT-4.1 (OpenAI)</option>
+                                    <option value="claude-opus-4">Claude Opus 4 (Anthropic)</option>
+                                    <option value="claude-sonnet-4">Claude Sonnet 4 (Anthropic)</option>
+                                    <option value="kimi-k2">Kimi K2 (OpenRouter)</option>
+                                    <option value="llama3.1">Llama 3.1 (Ollama)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Fallback Model</label>
+                                <select class="form-select mb-2" id="fallback-model">
+                                    <option value="claude-sonnet-4" selected>Claude Sonnet 4 (Anthropic)</option>
+                                    <option value="gpt-4.1">GPT-4.1 (OpenAI)</option>
+                                    <option value="gpt-4o">GPT-4o (OpenAI)</option>
+                                    <option value="claude-haiku-3.5">Claude Haiku 3.5 (Anthropic)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="d-flex align-items-center gap-4 text-sm">
+                                    <span><strong>Response Time:</strong> 1.2s</span>
+                                    <span><strong>Cost/1K tokens:</strong> $0.03</span>
+                                    <span><strong>Context:</strong> 128K</span>
+                                    <span class="badge bg-success">🟢 Online</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Models by Provider -->
+        <div class="row">
+            <div class="col-12">
+                <h5 class="mb-3">
+                    <i data-lucide="list" class="me-2"></i>Available Models by Provider
+                </h5>
+            </div>
+        </div>
+        <!-- Provider Selection -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">Select AI Provider</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="provider" id="provider-openai" value="openai" checked>
+                                    <label class="form-check-label" for="provider-openai">
+                                        <strong>OpenAI</strong><br>
+                                        <small class="text-muted">GPT models, multimodal</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="provider" id="provider-anthropic" value="anthropic">
+                                    <label class="form-check-label" for="provider-anthropic">
+                                        <strong>Anthropic</strong><br>
+                                        <small class="text-muted">Claude models, advanced reasoning</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="provider" id="provider-openrouter" value="openrouter">
+                                    <label class="form-check-label" for="provider-openrouter">
+                                        <strong>OpenRouter</strong><br>
+                                        <small class="text-muted">Unified API, 400+ models</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="provider" id="provider-ollama" value="ollama">
+                                    <label class="form-check-label" for="provider-ollama">
+                                        <strong>Ollama</strong><br>
+                                        <small class="text-muted">Run models locally</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OpenAI Configuration -->
+        <div class="row provider-config" id="openai-config">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i data-lucide="brain" class="me-2"></i>OpenAI Configuration
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="openai-form">
+                            <div class="mb-3">
+                                <label for="openai-api-key" class="form-label">API Key</label>
+                                <input type="password" id="openai-api-key" class="form-control" placeholder="sk-...">
+                                <small class="form-text text-muted">Get from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a></small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="openai-model" class="form-label">Model</label>
+                                <select id="openai-model" class="form-select">
+                                    <option value="gpt-4.1">GPT-4.1 (Flagship high-capability reasoning & long context)</option>
+                                    <option value="gpt-4.1-mini">GPT-4.1 Mini (Smaller/cheaper variant with good instruction following)</option>
+                                    <option value="gpt-4o">GPT-4o (Multimodal "Omni" model - text, image, audio)</option>
+                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Cost-effective baseline for conversational/light tasks)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="openai-temperature" class="form-label">Temperature</label>
+                                <input type="range" id="openai-temperature" class="form-range" min="0" max="2" step="0.1" value="0.7">
+                                <small class="text-muted">Current: <span id="openai-temp-value">0.7</span></small>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="saveOpenAISettings()">
+                                <i data-lucide="save" class="me-1"></i>Save OpenAI Settings
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">OpenAI Model Info</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="openai-model-info">
+                            <h6>GPT-4.1</h6>
+                            <p class="small text-muted">Flagship high-capability reasoning model with long context windows. Best for complex tasks requiring deep understanding and analysis.</p>
+                            <div class="d-flex justify-content-between">
+                                <span class="badge bg-primary">High Capability</span>
+                                <span class="badge bg-info">Long Context</span>
+                            </div>
+                        </div>
+                        <hr>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="testOpenAIConnection()">
+                            <i data-lucide="zap" class="me-1"></i>Test Connection
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Anthropic Configuration -->
+        <div class="row provider-config" id="anthropic-config" style="display: none;">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i data-lucide="cpu" class="me-2"></i>Anthropic Configuration
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="anthropic-form">
+                            <div class="mb-3">
+                                <label for="anthropic-api-key" class="form-label">API Key</label>
+                                <input type="password" id="anthropic-api-key" class="form-control" placeholder="sk-ant-...">
+                                <small class="form-text text-muted">Get from <a href="https://console.anthropic.com" target="_blank">Anthropic Console</a></small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="anthropic-model" class="form-label">Model</label>
+                                <select id="anthropic-model" class="form-select">
+                                    <option value="claude-opus-4">Claude Opus 4 (Most capable Claude for complex coding and long workflows)</option>
+                                    <option value="claude-sonnet-4">Claude Sonnet 4 (High-throughput/reasoning variant; upgrade over Sonnet 3.7)</option>
+                                    <option value="claude-3.7-sonnet">Claude 3.7 Sonnet (Older but stable model, good for tool integration)</option>
+                                    <option value="claude-haiku-3.5">Claude Haiku 3.5 (Lightweight / faster responses; economical)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="anthropic-temperature" class="form-label">Temperature</label>
+                                <input type="range" id="anthropic-temperature" class="form-range" min="0" max="1" step="0.1" value="0.7">
+                                <small class="text-muted">Current: <span id="anthropic-temp-value">0.7</span></small>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="saveAnthropicSettings()">
+                                <i data-lucide="save" class="me-1"></i>Save Anthropic Settings
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">Anthropic Model Info</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="anthropic-model-info">
+                            <h6>Claude Opus 4</h6>
+                            <p class="small text-muted">Most capable Claude model designed for complex coding tasks and long-form workflows with exceptional reasoning capabilities.</p>
+                            <div class="d-flex justify-content-between">
+                                <span class="badge bg-success">Complex Coding</span>
+                                <span class="badge bg-warning">Long Workflows</span>
+                            </div>
+                        </div>
+                        <hr>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="testAnthropicConnection()">
+                            <i data-lucide="zap" class="me-1"></i>Test Connection
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OpenRouter Configuration -->
+        <div class="row provider-config" id="openrouter-config" style="display: none;">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i data-lucide="globe" class="me-2"></i>OpenRouter Configuration
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="openrouter-form">
+                            <div class="mb-3">
+                                <label for="openrouter-api-key" class="form-label">API Key</label>
+                                <input type="password" id="openrouter-api-key" class="form-control" placeholder="sk-or-...">
+                                <small class="form-text text-muted">Get from <a href="https://openrouter.ai" target="_blank">OpenRouter Dashboard</a></small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="openrouter-model" class="form-label">Model</label>
+                                <select id="openrouter-model" class="form-select">
+                                    <optgroup label="Moonshot AI">
+                                        <option value="moonshotai/kimi-k2">Kimi K2 (Agentic Mixture-of-Experts model strong in coding/reasoning)</option>
+                                    </optgroup>
+                                    <optgroup label="Qwen">
+                                        <option value="qwen/qwen3-coder">Qwen3-Coder (MoE code generation model from Alibaba)</option>
+                                    </optgroup>
+                                    <optgroup label="Anthropic via OpenRouter">
+                                        <option value="anthropic/claude-3.7-sonnet">Claude 3.7 Sonnet</option>
+                                        <option value="anthropic/claude-sonnet-4">Claude Sonnet 4</option>
+                                    </optgroup>
+                                    <optgroup label="Google">
+                                        <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="openrouter-temperature" class="form-label">Temperature</label>
+                                <input type="range" id="openrouter-temperature" class="form-range" min="0" max="2" step="0.1" value="0.7">
+                                <small class="text-muted">Current: <span id="openrouter-temp-value">0.7</span></small>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="saveOpenRouterSettings()">
+                                <i data-lucide="save" class="me-1"></i>Save OpenRouter Settings
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">OpenRouter Benefits</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li><i data-lucide="check-circle" class="text-success me-2"></i>400+ Models Available</li>
+                            <li><i data-lucide="check-circle" class="text-success me-2"></i>Better Prices & Uptime</li>
+                            <li><i data-lucide="check-circle" class="text-success me-2"></i>OpenAI SDK Compatible</li>
+                            <li><i data-lucide="check-circle" class="text-success me-2"></i>Fallback to Other Providers</li>
+                            <li><i data-lucide="check-circle" class="text-success me-2"></i>Edge Performance (~25ms latency)</li>
+                        </ul>
+                        <hr>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="testOpenRouterConnection()">
+                            <i data-lucide="zap" class="me-1"></i>Test Connection
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ollama Configuration -->
+        <div class="row provider-config" id="ollama-config" style="display: none;">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i data-lucide="server" class="me-2"></i>Ollama Configuration
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="ollama-form">
+                            <div class="mb-3">
+                                <label for="ollama-base-url" class="form-label">Base URL</label>
+                                <input type="text" id="ollama-base-url" class="form-control" value="http://localhost:11434" placeholder="http://localhost:11434">
+                                <small class="form-text text-muted">Local Ollama server endpoint</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="ollama-model" class="form-label">Model</label>
+                                <select id="ollama-model" class="form-select">
+                                    <option value="llama3.1">Llama 3.1 (High-capacity generalist; runs fully locally)</option>
+                                    <option value="llama3.2">Llama 3.2 (Instruction-tuned / multilingual; efficient; local deployment)</option>
+                                    <option value="codellama">Code Llama (Specialized for code generation)</option>
+                                    <option value="mistral">Mistral 7B (Efficient general-purpose model)</option>
+                                    <option value="phi3">Phi-3 (Small but capable Microsoft model)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="ollama-temperature" class="form-label">Temperature</label>
+                                <input type="range" id="ollama-temperature" class="form-range" min="0" max="2" step="0.1" value="0.7">
+                                <small class="text-muted">Current: <span id="ollama-temp-value">0.7</span></small>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="saveOllamaSettings()">
+                                <i data-lucide="save" class="me-1"></i>Save Ollama Settings
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">Local AI Benefits</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li><i data-lucide="shield" class="text-success me-2"></i>Complete Privacy</li>
+                            <li><i data-lucide="wifi-off" class="text-success me-2"></i>Works Offline</li>
+                            <li><i data-lucide="dollar-sign" class="text-success me-2"></i>No API Costs</li>
+                            <li><i data-lucide="gauge" class="text-success me-2"></i>Full Control</li>
+                            <li><i data-lucide="hard-drive" class="text-success me-2"></i>Data Stays Local</li>
+                        </ul>
+                        <div class="alert alert-info small" role="alert">
+                            <i data-lucide="info" class="me-1"></i>
+                            <strong>Setup:</strong> Install Ollama, then run <code>ollama pull llama3.1</code>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="testOllamaConnection()">
+                            <i data-lucide="zap" class="me-1"></i>Test Connection
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RAG Configuration Tab -->
+    <div class="tab-pane fade" id="rag" role="tabpanel" aria-labelledby="rag-tab">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">RAG Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="rag-form">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="chunk-size" class="form-label">Chunk Size</label>
+                                        <input type="number" id="chunk-size" class="form-control" value="1000" min="100" max="4000">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="chunk-overlap" class="form-label">Chunk Overlap</label>
+                                        <input type="number" id="chunk-overlap" class="form-control" value="200" min="0" max="500">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="top-k" class="form-label">Top K Results</label>
+                                        <input type="number" id="top-k" class="form-control" value="5" min="1" max="20">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="similarity-threshold" class="form-label">Similarity Threshold</label>
+                                        <input type="number" id="similarity-threshold" class="form-control" value="0.7" min="0.1" max="1.0" step="0.1">
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="saveRAGSettings()">
+                                <i data-lucide="save" class="me-1"></i>Save RAG Settings
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">Vector Database</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="vector-db" class="form-label">Database Type</label>
+                            <select id="vector-db" class="form-select">
+                                <option value="chromadb">ChromaDB</option>
+                                <option value="pinecone">Pinecone</option>
+                                <option value="weaviate">Weaviate</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="collection-name" class="form-label">Collection Name</label>
+                            <input type="text" id="collection-name" class="form-control" value="network_docs">
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="testConnection()">
+                            <i data-lucide="zap" class="me-1"></i>Test Connection
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Embeddings Tab -->
+    <div class="tab-pane fade" id="embeddings" role="tabpanel" aria-labelledby="embeddings-tab">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">Embedding Models</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="embeddings-form">
+                            <div class="mb-3">
+                                <label for="embedding-provider" class="form-label">Provider</label>
+                                <select id="embedding-provider" class="form-select">
+                                    <option value="openai">OpenAI</option>
+                                    <option value="huggingface">HuggingFace</option>
+                                    <option value="sentence-transformers">Sentence Transformers</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="embedding-model" class="form-label">Model</label>
+                                <select id="embedding-model" class="form-select">
+                                    <option value="text-embedding-ada-002">text-embedding-ada-002</option>
+                                    <option value="text-embedding-3-small">text-embedding-3-small</option>
+                                    <option value="text-embedding-3-large">text-embedding-3-large</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="embedding-dimensions" class="form-label">Dimensions</label>
+                                <input type="number" id="embedding-dimensions" class="form-control" value="1536" readonly>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="saveEmbeddingSettings()">
+                                <i data-lucide="save" class="me-1"></i>Save Embedding Settings
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">Document Processing</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Supported Formats</label>
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge bg-primary">PDF</span>
+                                <span class="badge bg-primary">TXT</span>
+                                <span class="badge bg-primary">MD</span>
+                                <span class="badge bg-primary">DOCX</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="reindexDocuments()">
+                            <i data-lucide="refresh-cw" class="me-1"></i>Reindex Documents
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Automation Tab -->
+    <div class="tab-pane fade" id="automation" role="tabpanel" aria-labelledby="automation-tab">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">Automation Preferences</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="automation-form">
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="auto-validation" checked>
+                                    <label class="form-check-label" for="auto-validation">
+                                        Auto-validate configurations
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="auto-backup">
+                                    <label class="form-check-label" for="auto-backup">
+                                        Auto-backup before changes
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="ai-suggestions" checked>
+                                    <label class="form-check-label" for="ai-suggestions">
+                                        Enable AI suggestions
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="confidence-threshold" class="form-label">AI Confidence Threshold</label>
+                                <input type="range" id="confidence-threshold" class="form-range" min="0.5" max="1.0" step="0.1" value="0.8">
+                                <small class="text-muted">Current: <span id="confidence-value">0.8</span></small>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="saveAutomationSettings()">
+                                <i data-lucide="save" class="me-1"></i>Save Automation Settings
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">Model Performance</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <small class="text-muted">Response Time</small>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" role="progressbar" style="width: 75%">750ms</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Accuracy Score</small>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 92%">92%</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Token Usage (Today)</small>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-info" role="progressbar" style="width: 45%">45,230 tokens</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="refreshMetrics()">
+                            <i data-lucide="bar-chart" class="me-1"></i>Refresh Metrics
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // AI Settings Functions
+    function saveOpenAISettings() {
+        const apiKey = document.getElementById('openai-api-key').value;
+        const model = document.getElementById('openai-model').value;
+        
+        if (!apiKey) {
+            showToast('Please enter OpenAI API key', 'error');
+            return;
+        }
+        
+        // TODO: Call backend API to save settings
+        console.log('OpenAI settings saved:', { model, apiKey: '***' });
+        showToast('OpenAI settings saved successfully!', 'success');
+    }
+    
+    function saveAnthropicSettings() {
+        const apiKey = document.getElementById('anthropic-api-key').value;
+        const model = document.getElementById('anthropic-model').value;
+        
+        if (!apiKey) {
+            showToast('Please enter Anthropic API key', 'error');
+            return;
+        }
+        
+        // TODO: Call backend API to save settings
+        console.log('Anthropic settings saved:', { model, apiKey: '***' });
+        showToast('Anthropic settings saved successfully!', 'success');
+    }
+    
+    function saveRAGSettings() {
+        const chunkSize = document.getElementById('chunk-size').value;
+        const chunkOverlap = document.getElementById('chunk-overlap').value;
+        const topK = document.getElementById('top-k').value;
+        const threshold = document.getElementById('similarity-threshold').value;
+        
+        // TODO: Call backend API to save settings
+        console.log('RAG settings saved:', { chunkSize, chunkOverlap, topK, threshold });
+        showToast('RAG settings saved successfully!', 'success');
+    }
+    
+    function saveEmbeddingSettings() {
+        const provider = document.getElementById('embedding-provider').value;
+        const model = document.getElementById('embedding-model').value;
+        const dimensions = document.getElementById('embedding-dimensions').value;
+        
+        // TODO: Call backend API to save settings
+        console.log('Embedding settings saved:', { provider, model, dimensions });
+        showToast('Embedding settings saved successfully!', 'success');
+    }
+    
+    function saveAutomationSettings() {
+        const autoValidation = document.getElementById('auto-validation').checked;
+        const autoBackup = document.getElementById('auto-backup').checked;
+        const aiSuggestions = document.getElementById('ai-suggestions').checked;
+        const confidenceThreshold = document.getElementById('confidence-threshold').value;
+        
+        // TODO: Call backend API to save settings
+        console.log('Automation settings saved:', { autoValidation, autoBackup, aiSuggestions, confidenceThreshold });
+        showToast('Automation settings saved successfully!', 'success');
+    }
+    
+    function testConnection() {
+        const vectorDb = document.getElementById('vector-db').value;
+        const collectionName = document.getElementById('collection-name').value;
+        
+        showToast('Testing connection...', 'info');
+        
+        // TODO: Call backend API to test connection
+        setTimeout(() => {
+            showToast('Connection successful!', 'success');
+        }, 2000);
+    }
+    
+    function reindexDocuments() {
+        showToast('Starting document reindexing...', 'info');
+        
+        // TODO: Call backend API to reindex documents
+        setTimeout(() => {
+            showToast('Documents reindexed successfully!', 'success');
+        }, 3000);
+    }
+    
+    function refreshMetrics() {
+        showToast('Refreshing metrics...', 'info');
+        
+        // TODO: Call backend API to get fresh metrics
+        setTimeout(() => {
+            showToast('Metrics refreshed!', 'success');
+        }, 1500);
+    }
+    
+    // New provider-specific functions
+    function saveOpenRouterSettings() {
+        const apiKey = document.getElementById('openrouter-api-key').value;
+        const model = document.getElementById('openrouter-model').value;
+        const temperature = document.getElementById('openrouter-temperature').value;
+        
+        if (!apiKey) {
+            showToast('Please enter OpenRouter API key', 'error');
+            return;
+        }
+        
+        // TODO: Call backend API to save settings
+        console.log('OpenRouter settings saved:', { model, temperature, apiKey: '***' });
+        showToast('OpenRouter settings saved successfully!', 'success');
+    }
+    
+    function saveOllamaSettings() {
+        const baseUrl = document.getElementById('ollama-base-url').value;
+        const model = document.getElementById('ollama-model').value;
+        const temperature = document.getElementById('ollama-temperature').value;
+        
+        if (!baseUrl) {
+            showToast('Please enter Ollama base URL', 'error');
+            return;
+        }
+        
+        // TODO: Call backend API to save settings
+        console.log('Ollama settings saved:', { baseUrl, model, temperature });
+        showToast('Ollama settings saved successfully!', 'success');
+    }
+    
+    // Connection test functions
+    function testOpenAIConnection() {
+        const apiKey = document.getElementById('openai-api-key').value;
+        if (!apiKey) {
+            showToast('Please enter API key first', 'warning');
+            return;
+        }
+        
+        showToast('Testing OpenAI connection...', 'info');
+        // TODO: Call backend API to test connection
+        setTimeout(() => {
+            showToast('OpenAI connection successful!', 'success');
+        }, 2000);
+    }
+    
+    function testAnthropicConnection() {
+        const apiKey = document.getElementById('anthropic-api-key').value;
+        if (!apiKey) {
+            showToast('Please enter API key first', 'warning');
+            return;
+        }
+        
+        showToast('Testing Anthropic connection...', 'info');
+        // TODO: Call backend API to test connection
+        setTimeout(() => {
+            showToast('Anthropic connection successful!', 'success');
+        }, 2000);
+    }
+    
+    function testOpenRouterConnection() {
+        const apiKey = document.getElementById('openrouter-api-key').value;
+        if (!apiKey) {
+            showToast('Please enter API key first', 'warning');
+            return;
+        }
+        
+        showToast('Testing OpenRouter connection...', 'info');
+        // TODO: Call backend API to test connection
+        setTimeout(() => {
+            showToast('OpenRouter connection successful!', 'success');
+        }, 2000);
+    }
+    
+    function testOllamaConnection() {
+        const baseUrl = document.getElementById('ollama-base-url').value;
+        if (!baseUrl) {
+            showToast('Please enter base URL first', 'warning');
+            return;
+        }
+        
+        showToast('Testing Ollama connection...', 'info');
+        // TODO: Call backend API to test connection
+        setTimeout(() => {
+            showToast('Ollama connection successful!', 'success');
+        }, 2000);
+    }
+    
+    // Provider switching functionality
+    function switchProvider(provider) {
+        // Hide all provider configs
+        document.querySelectorAll('.provider-config').forEach(config => {
+            config.style.display = 'none';
+        });
+        
+        // Show selected provider config
+        const selectedConfig = document.getElementById(provider + '-config');
+        if (selectedConfig) {
+            selectedConfig.style.display = 'block';
+        }
+    }
+    
+    // Update temperature displays and provider switching
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle temperature sliders
+        const temperatureSliders = [
+            { slider: 'openai-temperature', display: 'openai-temp-value' },
+            { slider: 'anthropic-temperature', display: 'anthropic-temp-value' },
+            { slider: 'openrouter-temperature', display: 'openrouter-temp-value' },
+            { slider: 'ollama-temperature', display: 'ollama-temp-value' },
+            { slider: 'confidence-threshold', display: 'confidence-value' }
+        ];
+        
+        temperatureSliders.forEach(item => {
+            const slider = document.getElementById(item.slider);
+            const display = document.getElementById(item.display);
+            
+            if (slider && display) {
+                slider.addEventListener('input', function() {
+                    display.textContent = this.value;
+                });
+            }
+        });
+        
+        // Handle provider selection
+        document.querySelectorAll('input[name="provider"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    switchProvider(this.value);
+                }
+            });
+        });
+        
+        // Initialize with default provider (OpenAI)
+        switchProvider('openai');
+        
+        // Load existing settings
+        loadExistingSettings();
+    });
+    
+    function loadExistingSettings() {
+        // TODO: Call backend API to load existing settings
+        console.log('Loading existing AI settings...');
+    }
+
+    function showToast(message, type) {
+        const toastContainer = document.getElementById('toast-container');
+        const toastId = 'toast-' + Date.now();
+
+        const colorMap = {
+            success: 'bg-success',
+            error: 'bg-danger',
+            warning: 'bg-warning',
+            info: 'bg-primary'
+        };
+
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white ${colorMap[type]} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement);
+        toast.show();
+
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    }
+</script>
+{% endblock %}

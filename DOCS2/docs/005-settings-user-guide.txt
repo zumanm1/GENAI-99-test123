@@ -1,0 +1,222 @@
+# User Guide: Settings Page
+
+## Overview
+The Settings page is your configuration center for managing AI/ML providers, API keys, and system preferences for the Network Automation Platform. This is where you configure the AI engines that power the automation features.
+
+## Accessing the Settings Page
+- Click "Settings" in the sidebar navigation (gear icon)
+- Navigate to the /settings route
+- Access from user profile dropdown
+
+## Page Layout and Features
+
+### Header Section
+- **Title**: "Settings"
+- **Description**: Configure LLM providers and API settings
+- **Action Button**: "Save All" - Apply all configuration changes
+
+## Configuration Sections
+
+### Section 1: LLM Provider Selection
+
+**Purpose**: Choose and configure your AI/ML provider for network automation
+
+**Primary LLM Provider Options**:
+- **OpenAI GPT-4**: Advanced AI with excellent networking knowledge
+- **Groq**: High-speed inference for faster responses
+- **OpenRouter**: Access to multiple AI models through one API
+- **Ollama**: Local AI models for privacy and control
+
+**How to Select Provider**:
+1. Click the dropdown under "Primary LLM Provider"
+2. Choose your preferred AI provider
+3. The selection determines which AI powers all automation features
+4. Different providers offer different capabilities and speeds
+
+**OpenRouter Model Selection**:
+When OpenRouter is selected as primary provider, choose specific model:
+
+**Anthropic Models**:
+- **Claude 3.5 Sonnet**: Best balance of intelligence and speed
+- **Claude 3.5 Haiku**: Fastest responses, good for simple tasks
+- **Claude 3 Opus**: Highest intelligence, best for complex configurations
+
+**OpenAI Models**:
+- **GPT-4o**: Latest and most capable model
+- **GPT-4o Mini**: Faster and more cost-effective
+- **GPT-4 Turbo**: Good balance of capability and speed
+
+**Google Models**:
+- **Gemini Pro 1.5**: Strong performance, good for technical tasks
+- **Gemini Flash 1.5**: Faster responses, suitable for routine operations
+
+**Meta Llama Models**:
+- **Llama 3.1 405B**: Largest model with highest capability
+- **Llama 3.1 70B**: Good balance of performance and speed
+- **Llama 3.1 8B**: Fastest, suitable for simple networking tasks
+
+**Other Models**:
+- **Mistral Models**: European AI models with strong technical knowledge
+- **Command R+**: Cohere's model optimized for business use
+- **Perplexity Sonar**: Real-time web-enhanced AI responses
+
+### Section 2: API Configuration
+
+**Purpose**: Manage authentication credentials for AI services
+
+**API Key Fields**:
+
+**OpenAI API Key**:
+- **Format**: Starts with "sk-"
+- **Purpose**: Access OpenAI's GPT models
+- **Where to Get**: OpenAI platform dashboard
+- **Security**: Masked input field for protection
+
+**Groq API Key**:
+- **Format**: Starts with "gsk_"
+- **Purpose**: Access Groq's high-speed inference
+- **Where to Get**: Groq console
+- **Usage**: Ultra-fast AI responses
+
+**OpenRouter API Key**:
+- **Format**: Starts with "sk-or-"
+- **Purpose**: Access multiple AI models through OpenRouter
+- **Where to Get**: OpenRouter dashboard
+- **Benefit**: Single API for many models
+
+**Ollama Endpoint URL**:
+- **Format**: HTTP URL (e.g., http://localhost:11434)
+- **Purpose**: Connect to local Ollama installation
+- **Usage**: Private, local AI processing
+- **Default**: Local installation endpoint
+
+## Configuration Best Practices
+
+### Choosing the Right AI Provider
+
+**For High Performance Needs**:
+- Use Groq for fastest responses
+- Choose GPT-4o Mini for speed with good quality
+- Select Gemini Flash for Google ecosystem
+
+**For Maximum Intelligence**:
+- Use Claude 3.5 Sonnet for best overall performance
+- Choose GPT-4o for latest capabilities
+- Select Claude 3 Opus for most complex tasks
+
+**For Privacy and Control**:
+- Use Ollama with local models
+- Keep sensitive data on-premises
+- Control AI processing completely
+
+**For Cost Optimization**:
+- Use smaller models (8B parameters) for simple tasks
+- Choose Haiku or Mini models for routine operations
+- Consider local models to avoid API costs
+
+### API Key Management
+
+**Security Best Practices**:
+1. **Never share API keys**: Keep credentials private
+2. **Use environment variables**: Don't hardcode keys
+3. **Rotate keys regularly**: Update keys periodically
+4. **Monitor usage**: Track API consumption
+5. **Set spending limits**: Prevent unexpected charges
+
+**Key Storage Guidelines**:
+- Store keys securely
+- Use different keys for different environments
+- Document which keys are for which purposes
+- Have backup access methods
+
+## How to Configure Settings
+
+### Initial Setup Process:
+
+1. **Choose Primary Provider**:
+   - Assess your needs (speed vs. intelligence vs. privacy)
+   - Select appropriate provider from dropdown
+   - Consider your budget and usage patterns
+
+2. **Select Model (if using OpenRouter)**:
+   - Review model capabilities and costs
+   - Choose based on your use case requirements
+   - Start with balanced options like Claude 3.5 Sonnet
+
+3. **Enter API Credentials**:
+   - Obtain API keys from chosen providers
+   - Enter keys in corresponding fields
+   - Verify keys are working with test requests
+
+4. **Save Configuration**:
+   - Click "Save All" to apply settings
+   - Test configuration with automation features
+   - Monitor performance and adjust if needed
+
+### Configuration Testing:
+
+**Verify Setup**:
+1. Go to Automation page
+2. Try generating a simple configuration
+3. Check for successful AI responses
+4. Monitor response times and quality
+
+**Troubleshooting**:
+- Invalid API key errors: Check key format and validity
+- Slow responses: Consider faster models or providers
+- Quality issues: Try more capable models
+- Cost concerns: Switch to smaller or local models
+
+## Advanced Configuration Options
+
+### Multiple Provider Setup:
+- Configure backup providers for redundancy
+- Use different providers for different tasks
+- Implement fallback mechanisms
+
+### Performance Optimization:
+- Monitor response times by provider
+- Adjust model selection based on task complexity
+- Use caching to reduce API calls
+
+### Cost Management:
+- Track API usage and costs
+- Set up billing alerts
+- Optimize model selection for cost efficiency
+
+## Integration with Other Features
+
+### Automation Integration:
+- Settings determine which AI generates configurations
+- Model selection affects configuration quality
+- Provider choice impacts response speed
+
+### Operations Integration:
+- AI troubleshooting uses configured providers
+- Audit analysis powered by selected models
+- Performance varies by provider and model
+
+### Chat Integration:
+- Chat assistant uses primary provider
+- Response quality depends on model selection
+- Conversation context maintained across providers
+
+## Maintenance and Updates
+
+### Regular Maintenance:
+- Review and update API keys
+- Monitor provider performance
+- Adjust settings based on usage patterns
+- Update to newer models when available
+
+### Feature Updates:
+- New providers added regularly
+- Additional models supported over time
+- Enhanced configuration options
+- Improved integration features
+
+## Support and Documentation
+- Provider-specific documentation links
+- API key generation guides
+- Model comparison resources
+- Performance optimization tips

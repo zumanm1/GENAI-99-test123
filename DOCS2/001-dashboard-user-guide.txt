@@ -1,0 +1,54 @@
+# DASHBOARD USER GUIDE
+
+## Overview
+The dashboard provides a centralized view of your network infrastructure with real-time monitoring and analytics.
+
+## Key Features
+
+### 1. Device Status Overview
+- Real-time device status (online/offline/error)
+- Device count by type (routers, switches, firewalls)
+- Network health indicators
+- Recent alerts and notifications
+
+### 2. Performance Metrics
+- CPU and memory utilization
+- Interface utilization
+- Bandwidth usage trends
+- Response time metrics
+
+### 3. Interactive Network Topology
+- Drag-and-drop topology visualization
+- Device relationship mapping
+- Link status indicators
+- Zoom and pan functionality
+
+### 4. Customizable Widgets
+- Drag-and-drop widget arrangement
+- Configurable refresh intervals
+- Custom chart types
+- Widget filtering options
+
+### 5. Export and Reporting
+- PDF report generation
+- CSV data export
+- Scheduled report delivery
+- Custom report templates
+
+## Navigation
+- Main Dashboard: Overview of all network devices
+- Device Details: Click any device for detailed information
+- Alerts: View and manage network alerts
+- Reports: Access historical data and reports
+
+## Filters and Search
+- Filter by device type, location, status
+- Search devices by name or IP address
+- Date range selection for historical data
+- Save custom filter sets
+
+## Integration Features
+- SNMP monitoring integration
+- Syslog correlation
+- Third-party tool integration
+- API access for custom dashboards

@@ -78,7 +78,7 @@
         });
 
         // --- User Info Loading ---
-        fetch('http://localhost:8002/api/v1/users/me')
+        fetch('http://localhost:5000/api/v1/users/me')
             .then(response => response.json())
             .then(user => {
                 document.getElementById('user-name').textContent = user.full_name || 'Admin User';
@@ -113,7 +113,7 @@
             generateBtn.disabled = true;
             generateBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Generating...';
 
-            fetch('http://localhost:8002/api/v1/genai/config/generate', {
+            fetch('http://localhost:5000/api/v1/genai/config/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ requirements, device_type: deviceType })

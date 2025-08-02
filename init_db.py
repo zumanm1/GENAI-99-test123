@@ -8,8 +8,7 @@ import os
 import sys
 from sqlalchemy.orm import Session
 from backend.database.connection import init_db, engine, SessionLocal
-from backend.database.models import Base, User, Device, LLMSetting
-from backend.api.auth import get_password_hash
+from backend.database.models import Base, User, NetworkDevice, LLMSetting
 
 def create_tables():
     """
@@ -26,25 +25,25 @@ def create_initial_user(db: Session):
     print("Creating initial admin user...")
     
     # Check if admin user already exists
-    existing_user = db.query(User).filter(User.username == "admin").first()
+    existing_user = db.query(User).filter(User.email == "admin@example.com").first()
     if existing_user:
         print("Admin user already exists!")
         return
     
     # Create admin user
     admin_user = User(
-        username="admin",
         email="admin@example.com",
-        hashed_password=get_password_hash("admin123"),
-        is_superuser=True
+        display_name="Admin User",
+        role="admin"
     )
+    admin_user.set_password("admin123")
     
     db.add(admin_user)
     db.commit()
     db.refresh(admin_user)
     
     print("Admin user created successfully!")
-    print("Username: admin")
+    print("Email: admin@example.com")
     print("Password: admin123")
 
 def create_sample_devices(db: Session):
@@ -54,47 +53,46 @@ def create_sample_devices(db: Session):
     print("Creating sample devices...")
     
     # Check if sample devices already exist
-    existing_device = db.query(Device).filter(Device.name == "Router R15").first()
+    existing_device = db.query(NetworkDevice).filter(NetworkDevice.name == "Router R15").first()
     if existing_device:
         print("Sample devices already exist!")
         return
     
     # Create sample devices
     sample_devices = [
-        {
-            "name": "Router R15",
-            "ip_address": "192.168.1.15",
-            "device_type": "ios",
-            "username": "admin",
-            "hashed_password": get_password_hash("password123"),
-            "port": 22,
-            "protocol": "ssh",
-            "status": "online"
-        },
-        {
-            "name": "Router R16",
-            "ip_address": "192.168.1.16",
-            "device_type": "iosxr",
-            "username": "admin",
-            "hashed_password": get_password_hash("password123"),
-            "port": 22,
-            "protocol": "ssh",
-            "status": "online"
-        },
-        {
-            "name": "Router R17",
-            "ip_address": "192.168.1.17",
-            "device_type": "iosxe",
-            "username": "admin",
-            "hashed_password": get_password_hash("password123"),
-            "port": 22,
-            "protocol": "ssh",
-            "status": "offline"
-        }
+        NetworkDevice(
+            name="Router R15",
+            ip_address="192.168.1.15",
+            model="Cisco ISR 4331",
+            status="online"
+        ),
+        NetworkDevice(
+            name="Router R16",
+            ip_address="192.168.1.16",
+            model="Cisco ASR 1001-X",
+            status="online"
+        ),
+        NetworkDevice(
+            name="Router R17",
+            ip_address="192.168.1.17",
+            model="Cisco ISR 4321",
+            status="offline"
+        ),
+        NetworkDevice(
+            name="Switch SW01",
+            ip_address="192.168.1.101",
+            model="Cisco Catalyst 9300",
+            status="online"
+        ),
+        NetworkDevice(
+            name="Firewall FW01",
+            ip_address="192.168.1.254",
+            model="Cisco ASA 5516-X",
+            status="warning"
+        )
     ]
     
-    for device_data in sample_devices:
-        device = Device(**device_data)
+    for device in sample_devices:
         db.add(device)
     
     db.commit()

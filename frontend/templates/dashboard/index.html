@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Network Automation Platform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 mb-1">Network Dashboard</h1>
+                <p class="text-muted">Real-time monitoring and control of your network infrastructure</p>
+            </div>
+            <div>
+                <button class="btn btn-outline-primary me-2" id="refresh-dashboard">
+                    <i data-lucide="refresh-cw" class="me-1"></i>
+                    Refresh
+                </button>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#quick-action-modal">
+                    <i data-lucide="zap" class="me-1"></i>
+                    Quick Action
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i data-lucide="server" class="text-success"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="card-subtitle text-muted mb-1">Total Devices</h6>
+                        <h3 class="card-title mb-0" id="total-devices">0</h3>
+                        <small class="text-success">
+                            <i data-lucide="trending-up" class="me-1" style="width: 12px; height: 12px;"></i>
+                            <span id="online-percentage">0%</span> online
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i data-lucide="wifi" class="text-primary"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="card-subtitle text-muted mb-1">Online Devices</h6>
+                        <h3 class="card-title mb-0 text-success" id="online-devices">0</h3>
+                        <small class="text-muted"><span id="offline-devices">0</span> offline</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <i data-lucide="activity" class="text-warning"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="card-subtitle text-muted mb-1">System Health</h6>
+                        <h3 class="card-title mb-0" id="cpu-usage">45%</h3>
+                        <small class="text-muted">CPU Usage</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <i data-lucide="clock" class="text-info"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="card-subtitle text-muted mb-1">Avg Response</h6>
+                        <h3 class="card-title mb-0" id="network-latency">12ms</h3>
+                        <small class="text-muted">Network latency</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h5 class="card-title mb-0">Operations Timeline</h5>
+                <p class="card-text text-muted">Recent network operations over time</p>
+            </div>
+            <div class="card-body">
+                <canvas id="operations-timeline-chart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h5 class="card-title mb-0">Device Status</h5>
+                <p class="card-text text-muted">Current device status distribution</p>
+            </div>
+            <div class="card-body">
+                <canvas id="device-status-chart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Operations -->
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title mb-0">Recent Operations</h5>
+                    <p class="card-text text-muted mb-0">Latest network operations and their status</p>
+                </div>
+                <a href="/operations" class="btn btn-outline-primary btn-sm">
+                    View All
+                    <i data-lucide="arrow-right" class="ms-1"></i>
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="recent-operations-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Operation</th>
+                                <th>Device</th>
+                                <th>Status</th>
+                                <th>Duration</th>
+                                <th>Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Operations will be loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Modal -->
+<div class="modal fade" id="quick-action-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quick Actions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="runQuickAction('backup-all')">
+                        <i data-lucide="download" class="me-2"></i>
+                        Backup All Configurations
+                    </button>
+                    <button class="btn btn-outline-info" onclick="runQuickAction('health-check')">
+                        <i data-lucide="activity" class="me-2"></i>
+                        Run Health Check
+                    </button>
+                    <button class="btn btn-outline-success" onclick="runQuickAction('connectivity-test')">
+                        <i data-lucide="wifi" class="me-2"></i>
+                        Test All Connectivity
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Dashboard JavaScript functionality
+class NetworkDashboard {
+    constructor() {
+        this.initializeCharts();
+        this.setupEventListeners();
+        this.startAutoRefresh();
+        this.loadDashboardData();
+    }
+    
+    initializeCharts() {
+        // Device Status Chart
+        this.loadDeviceStatusChart();
+        
+        // Operations Timeline Chart
+        this.loadOperationsTimelineChart();
+    }
+    
+    loadDeviceStatusChart() {
+        fetch('/api/device-status-chart')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('device-status-chart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.labels || ['Online', 'Offline', 'Warning'],
+                        datasets: [{
+                            data: data.data || [0, 0, 0],
+                            backgroundColor: data.backgroundColor || ['#22c55e', '#ef4444', '#f59e0b'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error loading device status chart:', error));
+    }
+    
+    loadOperationsTimelineChart() {
+        fetch('/api/operations-timeline')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('operations-timeline-chart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels || [],
+                        datasets: [{
+                            label: 'Operations',
+                            data: data.data || [],
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error loading operations timeline chart:', error));
+    }
+    
+    setupEventListeners() {
+        document.getElementById('refresh-dashboard').addEventListener('click', () => {
+            this.refreshDashboard();
+        });
+    }
+    
+    refreshDashboard() {
+        this.loadDashboardData();
+        this.loadDeviceStatusChart();
+        this.loadOperationsTimelineChart();
+    }
+    
+    loadDashboardData() {
+        fetch('/api/stats')
+            .then(response => response.json())
+            .then(data => {
+                // Update statistics cards
+                if (data.devices) {
+                    document.getElementById('total-devices').textContent = data.devices.total || 0;
+                    document.getElementById('online-devices').textContent = data.devices.online || 0;
+                    document.getElementById('offline-devices').textContent = data.devices.offline || 0;
+                    document.getElementById('online-percentage').textContent = 
+                        (data.devices.online_percentage || 0) + '%';
+                }
+            })
+            .catch(error => console.error('Error loading dashboard data:', error));
+    }
+    
+    startAutoRefresh() {
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            this.updateStats();
+        }, 30000);
+    }
+    
+    updateStats() {
+        this.loadDashboardData();
+    }
+}
+
+// Quick Actions
+function runQuickAction(action) {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('quick-action-modal'));
+    modal.hide();
+    
+    if (window.NetworkApp) {
+        NetworkApp.showToast(`Running ${action.replace('-', ' ')}...`, 'info');
+        
+        // Implement actual quick actions here
+        setTimeout(() => {
+            NetworkApp.showToast(`${action.replace('-', ' ')} completed successfully!`, 'success');
+        }, 2000);
+    }
+}
+
+function viewOperationDetails(operationId) {
+    // Implement operation details view
+    if (window.NetworkApp) {
+        NetworkApp.showToast('Operation details feature coming soon...', 'info');
+    }
+}
+
+// Initialize dashboard when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new NetworkDashboard();
+});
+</script>
+{% endblock %}

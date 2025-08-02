@@ -1,0 +1,48 @@
+DASHBOARD PAGE - DETAILED PYTHON IMPLEMENTATION PRD
+================================================================
+
+OVERVIEW
+========
+The Dashboard serves as the main landing page providing system overview, recent activities, and key metrics. Implemented using Python Flask frontend with Jinja2 templates and Python Flask/FastAPI backend with PostgreSQL database.
+
+FRONTEND IMPLEMENTATION (Python Flask + Jinja2)
+===============================================
+
+Route: `/`
+Blueprint: `dashboard_bp`
+Template: `templates/dashboard/index.html`
+JavaScript: `static/js/dashboard.js`
+CSS: `static/css/dashboard.css`
+
+Key Features:
+- Real-time system status display
+- Device summary statistics
+- Recent operations timeline
+- Automation statistics
+- Activity feed with live updates
+
+API Endpoints Required:
+- GET `/api/system/status` - System health metrics
+- GET `/api/devices/summary` - Device count and status
+- GET `/api/operations/recent` - Recent operations list
+- GET `/api/automation/stats` - Automation performance
+- GET `/api/activity/recent` - Activity feed data
+
+BACKEND IMPLEMENTATION (Python Flask/FastAPI)
+==============================================
+
+Database Tables:
+- `system_metrics` - System performance data
+- `activity_logs` - User activity tracking
+- `dashboard_widgets` - Customizable dashboard elements
+
+Core Services:
+- `SystemMetrics` - Collect system performance
+- `ActivityLogger` - Track user actions
+- `DashboardManager` - Aggregate dashboard data
+
+Implementation Details:
+- Real-time updates via WebSocket/SSE
+- Caching with Redis for performance
+- Background tasks for metrics collection
+- Responsive design for mobile/desktop

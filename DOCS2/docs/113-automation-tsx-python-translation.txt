@@ -1,0 +1,894 @@
+# Python/Flask Translation: Automation.tsx
+
+## Current React Implementation Analysis
+The Automation.tsx component provides AI-powered configuration generation, validation, and deployment with complex state management, multi-step workflows, and real-time API interactions.
+
+## Python/Flask Equivalent Implementation
+
+### Flask Blueprint (blueprints/automation.py)
+```python
+from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, session
+from flask_login import login_required, current_user
+from flask_wtf import FlaskForm
+from wtforms import TextAreaField, SelectField, StringField, SubmitField
+from wtforms.validators import DataRequired
+import requests
+import json
+import uuid
+from datetime import datetime
+from models.network_device import NetworkDevice
+from models.automation_session import AutomationSession
+from models.configuration import Configuration
+from services.ai_service import AIService
+from services.device_service import DeviceService
+
+automation_bp = Blueprint('automation', __name__)
+
+class ConfigurationForm(FlaskForm):
+    """Form for configuration generation (equivalent to React form state)"""
+    user_prompt = TextAreaField('Configuration Requirements', 
+                               validators=[DataRequired()],
+                               render_kw={"placeholder": "Describe your network setup...", "rows": 6})
+    device_type = SelectField('Device Type', 
+                            choices=[('router', 'Router'), ('switch', 'Switch'), ('firewall', 'Firewall')],
+                            default='router')
+    vendor = SelectField('Vendor',
+                        choices=[('cisco', 'Cisco'), ('juniper', 'Juniper'), ('arista', 'Arista')],
+                        default='cisco')
+    submit = SubmitField('Generate Configuration')
+
+class ValidationForm(FlaskForm):
+    """Form for configuration validation"""
+    configuration_text = TextAreaField('Configuration to Validate',
+                                     validators=[DataRequired()],
+                                     render_kw={"rows": 15})
+    validation_type = SelectField('Validation Type',
+                                choices=[('comprehensive', 'Comprehensive'),
+                                       ('security', 'Security Only'),
+                                       ('syntax', 'Syntax Check')],
+                                default='comprehensive')
+    submit = SubmitField('Validate Configuration')
+
+class DeploymentForm(FlaskForm):
+    """Form for configuration deployment"""
+    target_device = SelectField('Target Device', coerce=int)
+    deployment_method = SelectField('Deployment Method',
+                                  choices=[('ssh', 'SSH'), ('telnet', 'Telnet'), ('snmp', 'SNMP')],
+                                  default='ssh')
+    backup_enabled = SelectField('Create Backup',
+                               choices=[('yes', 'Yes'), ('no', 'No')],
+                               default='yes')
+    submit = SubmitField('Deploy Configuration')
+
+@automation_bp.route('/')
+@login_required
+def automation_home():
+    """Main automation page (equivalent to Automation component)"""
+    
+    # Initialize session data (equivalent to React useState)
+    if 'automation_session_id' not in session:
+        session['automation_session_id'] = str(uuid.uuid4())
+    
+    # Get available devices for deployment
+    devices = NetworkDevice.query.filter_by(status='online').all()
+    
+    # Initialize forms
+    config_form = ConfigurationForm()
+    validation_form = ValidationForm()
+    deployment_form = DeploymentForm()
+    deployment_form.target_device.choices = [(d.id, f"{d.name} ({d.ip_address})") for d in devices]
+    
+    # Get session data (equivalent to React state)
+    automation_session = get_automation_session(session['automation_session_id'])
+    
+    context = {
+        'page_title': 'GENAI Network Automation',
+        'page_description': 'Generate, validate, and deploy network configurations using AI',
+        'config_form': config_form,
+        'validation_form': validation_form,
+        'deployment_form': deployment_form,
+        'devices': devices,
+        'automation_session': automation_session,
+        'workflow_steps': get_workflow_steps(automation_session),
+        'current_step': automation_session.current_step if automation_session else 1
+    }
+    
+    return render_template('automation/index.html', **context)
+
+@automation_bp.route('/generate', methods=['POST'])
+@login_required
+def generate_configuration():
+    """Generate configuration using AI (equivalent to React handleGenerate)"""
+    form = ConfigurationForm()
+    
+    if form.validate_on_submit():
+        try:
+            # Get or create automation session
+            session_id = session.get('automation_session_id')
+            auto_session = get_or_create_automation_session(session_id)
+            
+            # Prepare AI request (equivalent to React API call)
+            ai_request = {
+                'action': 'generate',
+                'prompt': f"Generate network configuration based on these requirements: {form.user_prompt.data}",
+                'context': {
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'user_requirements': form.user_prompt.data,
+                    'device_type': form.device_type.data,
+                    'vendor': form.vendor.data
+                },
+                'session_id': session_id
+            }
+            
+            # Call AI service (equivalent to React callAIAutomation)
+            ai_service = AIService()
+            response = ai_service.generate_configuration(ai_request)
+            
+            # Save configuration to database
+            config = Configuration(
+                session_id=session_id,
+                configuration_type='generated',
+                content=response['response'],
+                ai_model=response.get('modelUsed', 'unknown'),
+                generation_time=response.get('responseTime', 0)
+            )
+            
+            # Update session state (equivalent to React setState)
+            auto_session.generated_config = response['response']
+            auto_session.current_step = 2
+            auto_session.save()
+            
+            flash(f'Configuration generated using {response.get("modelUsed", "AI")} in {response.get("responseTime", "unknown")}ms', 'success')
+            return redirect(url_for('automation.automation_home', tab='validate'))
+            
+        except Exception as e:
+            flash(f'Generation failed: {str(e)}', 'error')
+    
+    return redirect(url_for('automation.automation_home'))
+
+@automation_bp.route('/validate', methods=['POST'])
+@login_required
+def validate_configuration():
+    """Validate configuration using AI (equivalent to React handleValidate)"""
+    form = ValidationForm()
+    
+    if form.validate_on_submit():
+        try:
+            session_id = session.get('automation_session_id')
+            auto_session = get_automation_session(session_id)
+            
+            if not auto_session:
+                flash('No active session found', 'error')
+                return redirect(url_for('automation.automation_home'))
+            
+            # Get configuration to validate
+            config_text = form.configuration_text.data or auto_session.generated_config
+            
+            if not config_text:
+                flash('No configuration to validate', 'error')
+                return redirect(url_for('automation.automation_home'))
+            
+            # Prepare validation request
+            validation_request = {
+                'action': 'validate',
+                'prompt': f'Validate this network configuration for security, best practices, and syntax: {config_text}',
+                'context': {
+                    'configuration_type': 'network_device',
+                    'validation_level': form.validation_type.data
+                },
+                'session_id': session_id
+            }
+            
+            # Call AI validation service
+            ai_service = AIService()
+            response = ai_service.validate_configuration(validation_request)
+            
+            # Process validation results (equivalent to React setValidationResults)
+            validation_score = calculate_validation_score(response['response'])
+            validation_status = 'error' if 'error' in response['response'].lower() or 'critical' in response['response'].lower() else 'success'
+            
+            # Update session with validation results
+            auto_session.validated_config = config_text
+            auto_session.validation_results = {
+                'status': validation_status,
+                'ai_analysis': response['response'],
+                'score': validation_score,
+                'timestamp': datetime.utcnow().isoformat()
+            }
+            auto_session.current_step = 3
+            auto_session.save()
+            
+            flash('Configuration validation completed', 'success')
+            return redirect(url_for('automation.automation_home', tab='deploy'))
+            
+        except Exception as e:
+            flash(f'Validation failed: {str(e)}', 'error')
+    
+    return redirect(url_for('automation.automation_home'))
+
+@automation_bp.route('/clean', methods=['POST'])
+@login_required
+def clean_configuration():
+    """Clean and optimize configuration (equivalent to React handleClean)"""
+    try:
+        session_id = session.get('automation_session_id')
+        auto_session = get_automation_session(session_id)
+        
+        if not auto_session or not auto_session.validated_config:
+            flash('No validated configuration to clean', 'error')
+            return redirect(url_for('automation.automation_home'))
+        
+        # Simulate cleaning process (equivalent to React setTimeout)
+        cleaned_config = f"""! Cleaned and Optimized Configuration
+{auto_session.validated_config}
+!
+! Added security enhancements
+service password-encryption
+logging buffered 4096
+!
+! Configuration optimized by AI"""
+        
+        # Update session
+        auto_session.cleaned_config = cleaned_config
+        auto_session.current_step = 4
+        auto_session.save()
+        
+        flash('Configuration cleaned and optimized', 'success')
+        return jsonify({'status': 'success', 'message': 'Configuration cleaned successfully'})
+        
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@automation_bp.route('/deploy', methods=['POST'])
+@login_required
+def deploy_configuration():
+    """Deploy configuration to device (equivalent to React handleDeploy)"""
+    form = DeploymentForm()
+    
+    if form.validate_on_submit():
+        try:
+            session_id = session.get('automation_session_id')
+            auto_session = get_automation_session(session_id)
+            
+            if not auto_session or not auto_session.cleaned_config:
+                flash('No configuration ready for deployment', 'error')
+                return redirect(url_for('automation.automation_home'))
+            
+            # Get target device
+            device = NetworkDevice.query.get(form.target_device.data)
+            if not device:
+                flash('Invalid target device', 'error')
+                return redirect(url_for('automation.automation_home'))
+            
+            # Prepare deployment
+            deployment_config = {
+                'device_id': device.id,
+                'configuration': auto_session.cleaned_config,
+                'method': form.deployment_method.data,
+                'backup_enabled': form.backup_enabled.data == 'yes',
+                'session_id': session_id
+            }
+            
+            # Call device service for deployment
+            device_service = DeviceService()
+            result = device_service.deploy_configuration(deployment_config)
+            
+            if result['success']:
+                auto_session.deployment_result = result
+                auto_session.deployed = True
+                auto_session.save()
+                
+                flash('Configuration deployed successfully!', 'success')
+            else:
+                flash(f'Deployment failed: {result.get("error", "Unknown error")}', 'error')
+                
+        except Exception as e:
+            flash(f'Deployment error: {str(e)}', 'error')
+    
+    return redirect(url_for('automation.automation_home'))
+
+@automation_bp.route('/retrieve-config', methods=['POST'])
+@login_required
+def retrieve_configuration():
+    """Retrieve configuration from device (equivalent to React handleRetrieveConfig)"""
+    device_id = request.form.get('device_id')
+    connection_method = request.form.get('connection_method', 'ssh')
+    
+    if not device_id:
+        return jsonify({'status': 'error', 'message': 'Device ID required'})
+    
+    try:
+        device = NetworkDevice.query.get(device_id)
+        if not device:
+            return jsonify({'status': 'error', 'message': 'Device not found'})
+        
+        # Call device service to retrieve configuration
+        device_service = DeviceService()
+        result = device_service.retrieve_configuration({
+            'action': 'backup',
+            'device_id': device_id,
+            'method': connection_method
+        })
+        
+        if result['success']:
+            # Store retrieved configuration in session
+            session_id = session.get('automation_session_id')
+            auto_session = get_or_create_automation_session(session_id)
+            auto_session.retrieved_config = result['result']
+            auto_session.save()
+            
+            return jsonify({
+                'status': 'success',
+                'message': f'Configuration retrieved in {result.get("duration", "unknown")}ms',
+                'configuration': result['result']
+            })
+        else:
+            return jsonify({'status': 'error', 'message': result.get('error', 'Unknown error')})
+            
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
+# Helper functions
+def get_automation_session(session_id):
+    """Get automation session by ID"""
+    if not session_id:
+        return None
+    return AutomationSession.query.filter_by(session_id=session_id).first()
+
+def get_or_create_automation_session(session_id):
+    """Get or create automation session"""
+    auto_session = get_automation_session(session_id)
+    if not auto_session:
+        auto_session = AutomationSession(
+            session_id=session_id,
+            user_id=current_user.id,
+            current_step=1
+        )
+        auto_session.save()
+    return auto_session
+
+def get_workflow_steps(automation_session):
+    """Get workflow steps with status (equivalent to React workflow indicator)"""
+    current_step = automation_session.current_step if automation_session else 1
+    
+    steps = [
+        {'step': 1, 'label': 'Generate', 'icon': 'robot', 'status': 'completed' if current_step > 1 else ('current' if current_step == 1 else 'pending')},
+        {'step': 2, 'label': 'Validate', 'icon': 'shield', 'status': 'completed' if current_step > 2 else ('current' if current_step == 2 else 'pending')},
+        {'step': 3, 'label': 'Clean', 'icon': 'refresh', 'status': 'completed' if current_step > 3 else ('current' if current_step == 3 else 'pending')},
+        {'step': 4, 'label': 'Deploy', 'icon': 'send', 'status': 'completed' if current_step > 4 else ('current' if current_step == 4 else 'pending')}
+    ]
+    
+    return steps
+
+def calculate_validation_score(ai_response):
+    """Calculate validation score from AI response"""
+    if 'excellent' in ai_response.lower():
+        return 95
+    elif 'good' in ai_response.lower():
+        return 85
+    else:
+        return 70
+```
+
+### Jinja2 Template (templates/automation/index.html)
+```html
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - Network Automation{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-6 fw-bold">{{ page_title }}</h1>
+            <p class="text-muted">{{ page_description }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-outline-primary me-2">
+                <i class="fas fa-file-alt"></i> Templates
+            </button>
+            <button class="btn btn-primary">
+                <i class="fas fa-robot"></i> AI Assistant
+            </button>
+        </div>
+    </div>
+
+    <!-- Workflow Steps (equivalent to React workflow indicator) -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Configuration Workflow</h5>
+            <small class="text-muted">Follow the 4-step process for safe configuration deployment</small>
+        </div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                {% for step in workflow_steps %}
+                <div class="text-center">
+                    <div class="mb-2">
+                        <div class="rounded-circle d-inline-flex align-items-center justify-center border-2 
+                                   {% if step.status == 'completed' %}bg-success border-success text-white
+                                   {% elif step.status == 'current' %}bg-primary border-primary text-white
+                                   {% else %}bg-light border-secondary text-muted{% endif %}"
+                             style="width: 50px; height: 50px;">
+                            <i class="fas fa-{{ step.icon }}"></i>
+                        </div>
+                    </div>
+                    <span class="small fw-medium">{{ step.label }}</span>
+                </div>
+                {% if not loop.last %}
+                <div class="flex-grow-1 mx-3">
+                    <hr class="{% if step.status == 'completed' %}border-success{% else %}border-secondary{% endif %} border-2">
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Workflow Tabs -->
+    <ul class="nav nav-tabs mb-4" id="automationTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="generate-tab" data-bs-toggle="tab" data-bs-target="#generate" type="button">
+                Generate
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="retrieve-tab" data-bs-toggle="tab" data-bs-target="#retrieve" type="button">
+                Retrieve
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="validate-tab" data-bs-toggle="tab" data-bs-target="#validate" type="button">
+                Validate
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="deploy-tab" data-bs-toggle="tab" data-bs-target="#deploy" type="button">
+                Deploy
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="automationTabsContent">
+        <!-- Generate Tab -->
+        <div class="tab-pane fade show active" id="generate" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-robot me-2"></i>
+                                AI Configuration Generator
+                            </h5>
+                            <small class="text-muted">Describe your network requirements and let AI generate the configuration</small>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('automation.generate_configuration') }}">
+                                {{ config_form.hidden_tag() }}
+                                
+                                <div class="mb-3">
+                                    {{ config_form.user_prompt.label(class="form-label") }}
+                                    {{ config_form.user_prompt(class="form-control") }}
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        {{ config_form.device_type.label(class="form-label") }}
+                                        {{ config_form.device_type(class="form-select") }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ config_form.vendor.label(class="form-label") }}
+                                        {{ config_form.vendor(class="form-select") }}
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex gap-2">
+                                    {{ config_form.submit(class="btn btn-primary flex-grow-1", id="generateBtn") }}
+                                    <button type="button" class="btn btn-outline-secondary">
+                                        <i class="fas fa-upload"></i> Upload
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <!-- Progress indicator (equivalent to React loading state) -->
+                            <div id="generateProgress" class="mt-3" style="display: none;">
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 67%"></div>
+                                </div>
+                                <small class="text-muted">Analyzing requirements and generating configuration...</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-file-alt me-2"></i>
+                                Generated Configuration
+                            </h5>
+                            <small class="text-muted">AI-generated Cisco IOS configuration</small>
+                        </div>
+                        <div class="card-body">
+                            <textarea class="form-control font-monospace" rows="15" readonly
+                                     placeholder="Generated configuration will appear here...">{% if automation_session and automation_session.generated_config %}{{ automation_session.generated_config }}{% endif %}</textarea>
+                            
+                            <div class="d-flex gap-2 mt-3">
+                                <button class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-download me-1"></i> Download
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-save me-1"></i> Save Template
+                                </button>
+                                {% if automation_session and automation_session.generated_config %}
+                                <button class="btn btn-primary btn-sm" onclick="switchToValidateTab()">
+                                    <i class="fas fa-shield-alt me-1"></i> Validate Config
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Validate Tab -->
+        <div class="tab-pane fade" id="validate" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-shield-alt me-2"></i>
+                                Configuration Validation
+                            </h5>
+                            <small class="text-muted">AI-powered validation for security and best practices</small>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('automation.validate_configuration') }}">
+                                {{ validation_form.hidden_tag() }}
+                                
+                                <div class="mb-3">
+                                    {{ validation_form.validation_type.label(class="form-label") }}
+                                    {{ validation_form.validation_type(class="form-select") }}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ validation_form.configuration_text.label(class="form-label") }}
+                                    {{ validation_form.configuration_text(class="form-control font-monospace") }}
+                                </div>
+                                
+                                {{ validation_form.submit(class="btn btn-primary w-100", id="validateBtn") }}
+                            </form>
+                            
+                            <!-- Validation progress -->
+                            <div id="validateProgress" class="mt-3" style="display: none;">
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 45%"></div>
+                                </div>
+                                <small class="text-muted">Running comprehensive validation...</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Validation Results</h5>
+                            <small class="text-muted">AI analysis and recommendations</small>
+                        </div>
+                        <div class="card-body">
+                            {% if automation_session and automation_session.validation_results %}
+                            <div class="validation-results">
+                                <div class="alert alert-{% if automation_session.validation_results.status == 'success' %}success{% else %}danger{% endif %}">
+                                    <h6>Validation Score: {{ automation_session.validation_results.score }}%</h6>
+                                    <p class="mb-0">{{ automation_session.validation_results.ai_analysis }}</p>
+                                </div>
+                                
+                                <div class="d-flex gap-2 mt-3">
+                                    <button class="btn btn-success btn-sm" onclick="cleanConfiguration()">
+                                        <i class="fas fa-broom me-1"></i> Clean & Optimize
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-download me-1"></i> Export Report
+                                    </button>
+                                </div>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No validation results yet. Run validation to see analysis.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deploy Tab -->
+        <div class="tab-pane fade" id="deploy" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-paper-plane me-2"></i>
+                                Configuration Deployment
+                            </h5>
+                            <small class="text-muted">Deploy validated configuration to target device</small>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('automation.deploy_configuration') }}">
+                                {{ deployment_form.hidden_tag() }}
+                                
+                                <div class="mb-3">
+                                    {{ deployment_form.target_device.label(class="form-label") }}
+                                    {{ deployment_form.target_device(class="form-select") }}
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        {{ deployment_form.deployment_method.label(class="form-label") }}
+                                        {{ deployment_form.deployment_method(class="form-select") }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ deployment_form.backup_enabled.label(class="form-label") }}
+                                        {{ deployment_form.backup_enabled(class="form-select") }}
+                                    </div>
+                                </div>
+                                
+                                {{ deployment_form.submit(class="btn btn-primary w-100", id="deployBtn") }}
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Deployment Status</h5>
+                            <small class="text-muted">Real-time deployment progress</small>
+                        </div>
+                        <div class="card-body">
+                            {% if automation_session and automation_session.deployment_result %}
+                            <div class="alert alert-{% if automation_session.deployment_result.success %}success{% else %}danger{% endif %}">
+                                <h6>Deployment {% if automation_session.deployment_result.success %}Successful{% else %}Failed{% endif %}</h6>
+                                <p class="mb-0">{{ automation_session.deployment_result.message }}</p>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No deployment in progress. Configure and deploy to see status.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// JavaScript functionality (equivalent to React event handlers and state management)
+
+function switchToValidateTab() {
+    // Switch to validation tab (equivalent to React tab state change)
+    const validateTab = new bootstrap.Tab(document.getElementById('validate-tab'));
+    validateTab.show();
+}
+
+function cleanConfiguration() {
+    // Clean configuration via AJAX (equivalent to React API call)
+    const cleanBtn = event.target;
+    const originalText = cleanBtn.innerHTML;
+    cleanBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Cleaning...';
+    cleanBtn.disabled = true;
+    
+    fetch('/automation/clean', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast(data.message, 'success');
+                // Switch to deploy tab
+                const deployTab = new bootstrap.Tab(document.getElementById('deploy-tab'));
+                deployTab.show();
+            } else {
+                showToast(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showToast('Error cleaning configuration: ' + error.message, 'error');
+        })
+        .finally(() => {
+            cleanBtn.innerHTML = originalText;
+            cleanBtn.disabled = false;
+        });
+}
+
+// Form submission handlers (equivalent to React form handlers)
+document.addEventListener('DOMContentLoaded', function() {
+    // Generate form handler
+    const generateForm = document.querySelector('form[action*="generate_configuration"]');
+    if (generateForm) {
+        generateForm.addEventListener('submit', function() {
+            document.getElementById('generateProgress').style.display = 'block';
+            document.getElementById('generateBtn').disabled = true;
+        });
+    }
+    
+    // Validate form handler
+    const validateForm = document.querySelector('form[action*="validate_configuration"]');
+    if (validateForm) {
+        validateForm.addEventListener('submit', function() {
+            document.getElementById('validateProgress').style.display = 'block';
+            document.getElementById('validateBtn').disabled = true;
+        });
+    }
+    
+    // Deploy form handler
+    const deployForm = document.querySelector('form[action*="deploy_configuration"]');
+    if (deployForm) {
+        deployForm.addEventListener('submit', function() {
+            document.getElementById('deployBtn').innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Deploying...';
+            document.getElementById('deployBtn').disabled = true;
+        });
+    }
+});
+
+// Tab switching based on URL parameters (equivalent to React routing)
+const urlParams = new URLSearchParams(window.location.search);
+const activeTab = urlParams.get('tab');
+if (activeTab) {
+    const tabElement = document.getElementById(activeTab + '-tab');
+    if (tabElement) {
+        const tab = new bootstrap.Tab(tabElement);
+        tab.show();
+    }
+}
+</script>
+{% endblock %}
+```
+
+### Database Models (models/automation_session.py)
+```python
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+import json
+
+db = SQLAlchemy()
+
+class AutomationSession(db.Model):
+    """Automation session model (equivalent to React session state)"""
+    __tablename__ = 'automation_sessions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(100), unique=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    current_step = db.Column(db.Integer, default=1)
+    
+    # Configuration states (equivalent to React state variables)
+    generated_config = db.Column(db.Text)
+    retrieved_config = db.Column(db.Text)
+    validated_config = db.Column(db.Text)
+    cleaned_config = db.Column(db.Text)
+    
+    # Process results
+    validation_results = db.Column(db.JSON)
+    deployment_result = db.Column(db.JSON)
+    
+    # Flags
+    deployed = db.Column(db.Boolean, default=False)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def save(self):
+        """Save session to database"""
+        db.session.add(self)
+        db.session.commit()
+    
+    def to_dict(self):
+        """Convert to dictionary"""
+        return {
+            'session_id': self.session_id,
+            'current_step': self.current_step,
+            'generated_config': self.generated_config,
+            'retrieved_config': self.retrieved_config,
+            'validated_config': self.validated_config,
+            'cleaned_config': self.cleaned_config,
+            'validation_results': self.validation_results,
+            'deployment_result': self.deployment_result,
+            'deployed': self.deployed
+        }
+
+class Configuration(db.Model):
+    """Configuration model for storing generated/validated configs"""
+    __tablename__ = 'configurations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(100), nullable=False)
+    configuration_type = db.Column(db.String(50), nullable=False)  # generated, retrieved, validated, cleaned
+    content = db.Column(db.Text, nullable=False)
+    ai_model = db.Column(db.String(100))
+    generation_time = db.Column(db.Integer)  # milliseconds
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+```
+
+### Service Classes (services/ai_service.py)
+```python
+import requests
+import json
+from datetime import datetime
+
+class AIService:
+    """AI service for configuration generation and validation (equivalent to React API calls)"""
+    
+    def __init__(self):
+        self.base_url = "http://localhost:54321/functions/v1"  # Supabase functions URL
+    
+    def generate_configuration(self, request_data):
+        """Generate configuration using AI (equivalent to callAIAutomation)"""
+        # Simulate AI response for now (replace with actual AI API call)
+        response = {
+            'response': f"""! Generated configuration for {request_data['context'].get('device_type', 'router')}
+hostname R20-BRANCH-03
+!
+interface GigabitEthernet0/0
+ ip address 192.168.1.20 255.255.255.0
+ no shutdown
+!
+interface GigabitEthernet0/1  
+ ip address 10.0.1.20 255.255.255.0
+ no shutdown
+!
+router ospf 1
+ network 192.168.1.0 0.0.0.255 area 0
+ network 10.0.1.0 0.0.0.255 area 0
+!
+ip access-list extended BRANCH_ACL
+ permit ip 192.168.1.0 0.0.0.255 any
+ deny ip any any log
+!
+end""",
+            'modelUsed': 'claude-3-haiku',
+            'responseTime': '1500'
+        }
+        
+        return response
+    
+    def validate_configuration(self, request_data):
+        """Validate configuration using AI"""
+        # Simulate validation response
+        response = {
+            'response': 'Configuration analysis complete. Good security practices implemented. Minor optimization suggestions available.',
+            'modelUsed': 'claude-3-haiku',
+            'responseTime': '1200'
+        }
+        
+        return response
+```
+
+## Key Differences from React Implementation
+
+### State Management
+- **React**: Complex useState hooks for multiple configuration states
+- **Python/Flask**: Database-backed session management with AutomationSession model
+
+### Form Handling
+- **React**: Controlled components with onChange handlers
+- **Python/Flask**: Flask-WTF forms with server-side validation
+
+### API Interactions
+- **React**: Client-side API calls with async/await
+- **Python/Flask**: Server-side service classes and database operations
+
+### Real-time Updates
+- **React**: Live state updates and progress indicators
+- **Python/Flask**: AJAX calls and page refreshes with session persistence
+
+### Workflow Management
+- **React**: Client-side step tracking with useState
+- **Python/Flask**: Database-backed workflow state with current_step tracking
+
+This Python/Flask implementation provides equivalent functionality to the React Automation component while leveraging server-side processing and traditional web application patterns.

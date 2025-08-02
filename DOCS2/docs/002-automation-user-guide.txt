@@ -1,0 +1,50 @@
+AUTOMATION PAGE - DETAILED PYTHON IMPLEMENTATION PRD
+=======================================================
+
+OVERVIEW
+========
+AI-powered network automation rules management with creation, execution, and monitoring capabilities. Python Flask frontend with comprehensive backend API.
+
+FRONTEND IMPLEMENTATION (Python Flask + Jinja2)
+===============================================
+
+Routes:
+- `/automation` - Main automation page
+- `/automation/create` - Create new rule
+- `/automation/rule/<id>` - View rule details
+- `/automation/templates` - Automation templates
+
+Templates:
+- `templates/automation/index.html` - Rules list
+- `templates/automation/create.html` - Rule creation form
+- `templates/automation/detail.html` - Rule details
+
+Key Features:
+- Rule builder with drag-drop interface
+- AI prompt integration
+- Execution monitoring
+- Template library
+- Bulk rule operations
+
+BACKEND IMPLEMENTATION (Python Flask/FastAPI)
+==============================================
+
+Database Tables:
+- `automation_rules` - Rule definitions
+- `automation_executions` - Execution history
+- `automation_templates` - Pre-built templates
+- `rule_triggers` - Trigger conditions
+- `rule_actions` - Action configurations
+
+API Endpoints:
+- CRUD operations for rules
+- Rule execution engine
+- AI service integration
+- Template management
+- Execution monitoring
+
+Services:
+- `AutomationEngine` - Rule execution
+- `AIService` - AI prompt processing
+- `TriggerManager` - Condition evaluation
+- `ActionExecutor` - Action implementation

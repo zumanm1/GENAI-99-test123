@@ -1,0 +1,897 @@
+{% extends "base.html" %}
+
+{% block title %}Operations - Network Operations Platform{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/operations.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- WebSocket Status Indicator -->
+<div id="websocket-status" class="websocket-status disconnected" style="display: none;">
+    <span class="status-indicator disconnected" id="ws-indicator"></span>
+    <span id="ws-status-text">Connecting...</span>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 mb-1">GENAI Network Operations</h1>
+                <p class="text-muted">AI-powered network automation for Cisco devices</p>
+            </div>
+
+            <div>
+                <button class="btn btn-outline-primary me-2" onclick="refreshOperations()">
+                    <i data-lucide="refresh-cw" class="me-1"></i>
+                    Refresh
+                </button>
+                <button class="btn btn-primary" onclick="showQuickActionsModal()">
+                    <i data-lucide="zap" class="me-1"></i>
+                    Quick Actions
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- GENAI Operations Tabs -->
+<div class="row mb-4">
+    <div class="col-12">
+        <ul class="nav nav-tabs" id="operationsTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="audit-tab" data-bs-toggle="tab" data-bs-target="#audit" type="button" role="tab">
+                    <i data-lucide="shield-check" class="me-2"></i>
+                    Configuration Audit
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="baseline-tab" data-bs-toggle="tab" data-bs-target="#baseline" type="button" role="tab">
+                    <i data-lucide="git-branch" class="me-2"></i>
+                    Baseline Management
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="troubleshoot-tab" data-bs-toggle="tab" data-bs-target="#troubleshoot" type="button" role="tab">
+                    <i data-lucide="wrench" class="me-2"></i>
+                    AI Troubleshooter
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
+                    <i data-lucide="history" class="me-2"></i>
+                    Operation History
+                </button>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Tab Content -->
+<div class="row">
+    <div class="col-12">
+        <div class="tab-content" id="operationsTabContent">
+            
+            <!-- Configuration Audit Tab -->
+            <div class="tab-pane fade show active" id="audit" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="card-title mb-0">Start New Audit</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="audit-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">Audit Type</label>
+                                        <select class="form-select" id="audit-type">
+                                            <option value="comprehensive">Comprehensive</option>
+                                            <option value="security">Security Only</option>
+                                            <option value="compliance">Compliance</option>
+                                            <option value="performance">Performance</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Target Devices</label>
+                                        <div id="device-selection">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="all" id="select-all">
+                                                <label class="form-check-label" for="select-all">
+                                                    <strong>All Devices</strong>
+                                                </label>
+                                            </div>
+                                            <div id="device-list">
+                                                <!-- Device checkboxes will be populated here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-primary w-100" onclick="startAudit()">
+                                        <i data-lucide="play" class="me-2"></i>
+                                        Start Audit
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">Recent Audit Results</h5>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="refreshAuditResults()">
+                                    <i data-lucide="refresh-cw" class="me-1"></i>
+                                    Refresh
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="audit-results">
+                                    <div class="text-center py-4">
+                                        <i data-lucide="clipboard-list" class="text-muted" style="width: 48px; height: 48px;"></i>
+                                        <p class="text-muted mt-2">No audit results yet. Start your first audit above.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Baseline Management Tab -->
+            <div class="tab-pane fade" id="baseline" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="card-title mb-0">Create Baseline</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="baseline-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">Baseline Name</label>
+                                        <input type="text" class="form-control" id="baseline-name" placeholder="e.g., Production Core Router Baseline">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Baseline Type</label>
+                                        <select class="form-select" id="baseline-type">
+                                            <option value="golden">Golden Configuration</option>
+                                            <option value="environment">Environment Specific</option>
+                                            <option value="device_specific">Device Specific</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Environment</label>
+                                        <select class="form-select" id="baseline-environment">
+                                            <option value="prod">Production</option>
+                                            <option value="test">Test</option>
+                                            <option value="dev">Development</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" class="btn btn-success w-100" onclick="createBaseline()">
+                                        <i data-lucide="plus" class="me-2"></i>
+                                        Create Baseline
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white">
+                                <h5 class="card-title mb-0">Configuration Drift Analysis</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="drift-analysis">
+                                    <div class="text-center py-4">
+                                        <i data-lucide="git-branch" class="text-muted" style="width: 48px; height: 48px;"></i>
+                                        <p class="text-muted mt-2">Create a baseline to monitor configuration drift.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Troubleshooter Tab -->
+            <div class="tab-pane fade" id="troubleshoot" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-5">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="card-title mb-0">AI Troubleshooter</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="troubleshoot-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">Problem Domain</label>
+                                        <select class="form-select" id="problem-domain">
+                                            <option value="connectivity">Connectivity Issues</option>
+                                            <option value="performance">Performance Problems</option>
+                                            <option value="routing">Routing Anomalies</option>
+                                            <option value="security">Security Incidents</option>
+                                            <option value="hardware">Hardware Failures</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Problem Description</label>
+                                        <textarea class="form-control" id="problem-description" rows="4" placeholder="Describe the issue you're experiencing..."></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Affected Devices</label>
+                                        <select class="form-select" id="affected-devices" multiple>
+                                            <!-- Will be populated with device options -->
+                                        </select>
+                                        <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple devices</small>
+                                    </div>
+                                    <button type="button" class="btn btn-warning w-100" onclick="startTroubleshooting()">
+                                        <i data-lucide="brain" class="me-2"></i>
+                                        Start AI Diagnosis
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-7">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white">
+                                <h5 class="card-title mb-0">AI Analysis Results</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="troubleshoot-results">
+                                    <div class="text-center py-4">
+                                        <i data-lucide="wrench" class="text-muted" style="width: 48px; height: 48px;"></i>
+                                        <p class="text-muted mt-2">Describe your network issue and let AI help diagnose the problem.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Operation History Tab -->
+            <div class="tab-pane fade" id="history" role="tabpanel">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Operation History</h5>
+                        <button class="btn btn-outline-primary btn-sm" onclick="refreshOperations()">
+                            <i data-lucide="refresh-cw" class="me-1"></i>
+                            Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-hover" id="operations-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Device</th>
+                                    <th>Created</th>
+                                    <th>Duration</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="operations-list">
+                                <!-- Operation rows will be dynamically generated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<!-- Filter Modal -->
+<div class="modal fade" id="filter-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Filter Operations</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="filter-form">
+                    <div class="mb-3">
+                        <label for="operation-type" class="form-label">Operation Type</label>
+                        <select class="form-select" id="operation-type">
+                            <option value="">All</option>
+                            <option value="audit">Audit</option>
+                            <option value="deploy">Deploy</option>
+                            <option value="backup">Backup</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="status-type" class="form-label">Status</label>
+                        <select class="form-select" id="status-type">
+                            <option value="">All</option>
+                            <option value="success">Success</option>
+                            <option value="failure">Failure</option>
+                            <option value="in-progress">In Progress</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="applyFilter()">
+                        <i data-lucide="filter" class="me-1"></i>
+                        Apply Filters
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let devicesList = [];
+    let currentAuditSession = null;
+    let currentTroubleshootSession = null;
+    let ws = null;
+    let wsReconnectInterval = null;
+    
+    // WebSocket functionality
+    function initWebSocket() {
+        if (ws && ws.readyState === WebSocket.OPEN) return;
+        
+        updateWebSocketStatus('connecting', 'Connecting...');
+        
+        try {
+            ws = new WebSocket(`ws://${window.location.host}/ws/operations`);
+            
+            ws.onopen = function(event) {
+                console.log('WebSocket connected');
+                updateWebSocketStatus('connected', 'Real-time updates active');
+                showToast('Real-time updates connected', 'success');
+                
+                if (wsReconnectInterval) {
+                    clearInterval(wsReconnectInterval);
+                    wsReconnectInterval = null;
+                }
+                
+                // Subscribe to operation updates
+                ws.send(JSON.stringify({
+                    type: 'subscribe',
+                    operation_type: 'audit'
+                }));
+            };
+            
+            ws.onmessage = function(event) {
+                const message = JSON.parse(event.data);
+                console.log('WebSocket message:', message);
+                handleWebSocketMessage(message);
+            };
+            
+            ws.onclose = function(event) {
+                console.log('WebSocket disconnected');
+                updateWebSocketStatus('disconnected', 'Disconnected - Reconnecting...');
+                showToast('Real-time updates disconnected', 'warning');
+                
+                // Attempt to reconnect
+                if (!wsReconnectInterval) {
+                    wsReconnectInterval = setInterval(initWebSocket, 5000);
+                }
+            };
+            
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                updateWebSocketStatus('error', 'Connection error');
+            };
+        } catch (error) {
+            console.error('Failed to connect WebSocket:', error);
+            updateWebSocketStatus('error', 'Failed to connect');
+        }
+    }
+    
+    function updateWebSocketStatus(status, message) {
+        const statusElement = document.getElementById('websocket-status');
+        const indicatorElement = document.getElementById('ws-indicator');
+        const textElement = document.getElementById('ws-status-text');
+        
+        if (statusElement && indicatorElement && textElement) {
+            // Update classes
+            statusElement.className = `websocket-status ${status}`;
+            indicatorElement.className = `status-indicator ${status}`;
+            textElement.textContent = message;
+            
+            // Show/hide the status indicator
+            statusElement.style.display = status === 'connected' ? 'none' : 'block';
+        }
+    }
+    
+    function handleWebSocketMessage(message) {
+        switch (message.type) {
+            case 'operation_update':
+                handleOperationUpdate(message);
+                break;
+            case 'device_status':
+                handleDeviceStatusUpdate(message);
+                break;
+            case 'command_result':
+                handleCommandResult(message);
+                break;
+            case 'audit_progress':
+                handleAuditProgress(message);
+                break;
+            case 'troubleshoot_update':
+                handleTroubleshootUpdate(message);
+                break;
+        }
+    }
+    
+    function handleOperationUpdate(update) {
+        showToast(`${update.operation_type}: ${update.message || update.status}`, 
+                  update.status === 'success' ? 'success' : update.status === 'error' ? 'error' : 'info');
+        
+        // Update progress if available
+        if (update.progress !== undefined) {
+            updateProgressBar(update.operation_id, update.progress);
+        }
+        
+        // Refresh operations list
+        loadOperations();
+    }
+    
+    function handleDeviceStatusUpdate(status) {
+        showToast(`Device ${status.device_name}: ${status.status}`, 
+                  status.status === 'connected' ? 'success' : status.status === 'error' ? 'error' : 'info');
+        updateDeviceStatus(status.device_id, status.status);
+    }
+    
+    function handleCommandResult(result) {
+        showToast(`Command executed on device: ${result.success ? 'Success' : 'Failed'}`, 
+                  result.success ? 'success' : 'error');
+        displayCommandResult(result);
+    }
+    
+    function handleAuditProgress(progress) {
+        updateAuditProgress(progress);
+    }
+    
+    function handleTroubleshootUpdate(update) {
+        updateTroubleshootProgress(update);
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        loadOperations();
+        loadDevices();
+        initWebSocket();
+        
+        // Initialize Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+
+    async function loadOperations() {
+        try {
+            const response = await fetch('/api/operations');
+            const operations = await response.json();
+            const operationsList = document.getElementById('operations-list');
+            operationsList.innerHTML = '';
+
+            operations.forEach((operation, index) => {
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${operation.title}</td>
+                        <td>${operation.type}</td>
+                        <td><span class="badge bg-${operation.status === 'success' ? 'success' : 'danger'}">${operation.status}</span></td>
+                        <td>${operation.startTime}</td>
+                        <td>${operation.duration}</td>
+                        <td><button class="btn btn-outline-info btn-sm" onclick="viewOperationDetails(${index + 1})">View Details</button></td>
+                    </tr>
+                `;
+                operationsList.insertAdjacentHTML('beforeend', row);
+            });
+        } catch (error) {
+            console.error('Error loading operations:', error);
+        }
+    }
+
+    function refreshOperations() {
+        loadOperations();
+        showToast('Operations refreshed successfully', 'success');
+    }
+
+    function applyFilter() {
+        const type = document.getElementById('operation-type').value;
+        const status = document.getElementById('status-type').value;
+
+        console.log(`Filter applied: Type - ${type}, Status - ${status}`);
+        showToast('Filters applied', 'info');
+
+        const modal = bootstrap.Modal.getInstance(document.getElementById('filter-modal'));
+        modal.hide();
+
+        loadOperations(); // Reload operations with new filters
+    }
+
+    function showToast(message, type) {
+        const toastContainer = document.getElementById('toast-container');
+        const toastId = 'toast-' + Date.now();
+
+        const colorMap = {
+            success: 'bg-success',
+            error: 'bg-danger',
+            warning: 'bg-warning',
+            info: 'bg-primary'
+        };
+
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white ${colorMap[type]} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement);
+        toast.show();
+
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    }
+
+    // Load devices from API
+    async function loadDevices() {
+        try {
+            const response = await fetch('/api/devices');
+            const devices = await response.json();
+            devicesList = devices;
+            
+            // Populate device lists in various forms
+            populateDeviceCheckboxes(devices);
+            populateDeviceSelects(devices);
+        } catch (error) {
+            console.error('Error loading devices:', error);
+            showToast('Failed to load devices', 'error');
+        }
+    }
+
+    function populateDeviceCheckboxes(devices) {
+        const deviceListContainer = document.getElementById('device-list');
+        deviceListContainer.innerHTML = '';
+        
+        devices.forEach(device => {
+            const checkbox = `
+                <div class="form-check">
+                    <input class="form-check-input device-checkbox" type="checkbox" value="${device.id}" id="device-${device.id}">
+                    <label class="form-check-label" for="device-${device.id}">
+                        ${device.name} (${device.ip_address})
+                    </label>
+                </div>
+            `;
+            deviceListContainer.insertAdjacentHTML('beforeend', checkbox);
+        });
+        
+        // Handle "Select All" checkbox
+        document.getElementById('select-all').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.device-checkbox');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+    }
+
+    function populateDeviceSelects(devices) {
+        const affectedDevicesSelect = document.getElementById('affected-devices');
+        affectedDevicesSelect.innerHTML = '';
+        
+        devices.forEach(device => {
+            const option = document.createElement('option');
+            option.value = device.id;
+            option.text = `${device.name} (${device.ip_address})`;
+            affectedDevicesSelect.appendChild(option);
+        });
+    }
+
+    // GENAI Operations Functions
+    async function startAudit() {
+        const auditType = document.getElementById('audit-type').value;
+        const selectedDevices = Array.from(document.querySelectorAll('.device-checkbox:checked')).map(cb => cb.value);
+        
+        if (selectedDevices.length === 0) {
+            showToast('Please select at least one device', 'warning');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/operations/audit/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    device_ids: selectedDevices,
+                    audit_type: auditType,
+                    audit_options: {}
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                currentAuditSession = result.audit_session_id;
+                showToast('Audit started successfully', 'success');
+                showAuditProgress(result);
+            } else {
+                showToast(`Audit failed: ${result.detail}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error starting audit:', error);
+            showToast('Failed to start audit', 'error');
+        }
+    }
+
+    function showAuditProgress(auditInfo) {
+        const auditResults = document.getElementById('audit-results');
+        auditResults.innerHTML = `
+            <div class="audit-progress">
+                <h6>Audit Session: ${auditInfo.audit_session_id}</h6>
+                <div class="progress mb-3">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="audit-progress-bar">
+                        0%
+                    </div>
+                </div>
+                <div id="audit-status">Starting audit...</div>
+                <div id="audit-findings" class="mt-3"></div>
+            </div>
+        `;
+        
+        // Start polling for progress
+        pollAuditProgress(auditInfo.audit_session_id);
+    }
+
+    async function pollAuditProgress(auditId) {
+        try {
+            const response = await fetch(`/api/operations/audit/${auditId}/status`);
+            const status = await response.json();
+            
+            updateAuditProgress(status);
+            
+            if (status.status !== 'completed') {
+                setTimeout(() => pollAuditProgress(auditId), 2000);
+            } else {
+                loadAuditResults(auditId);
+            }
+        } catch (error) {
+            console.error('Error polling audit progress:', error);
+        }
+    }
+
+    function updateAuditProgress(progress) {
+        const progressBar = document.getElementById('audit-progress-bar');
+        const statusDiv = document.getElementById('audit-status');
+        
+        if (progressBar) {
+            progressBar.style.width = `${progress.progress_percentage}%`;
+            progressBar.textContent = `${progress.progress_percentage}%`;
+        }
+        
+        if (statusDiv) {
+            statusDiv.textContent = `Status: ${progress.status} - ${progress.current_device}`;
+        }
+    }
+
+    async function loadAuditResults(auditId) {
+        try {
+            const response = await fetch(`/api/operations/audit/${auditId}/results`);
+            const results = await response.json();
+            
+            displayAuditResults(results);
+        } catch (error) {
+            console.error('Error loading audit results:', error);
+        }
+    }
+
+    function displayAuditResults(results) {
+        const findingsDiv = document.getElementById('audit-findings');
+        
+        if (results && results.length > 0) {
+            let findingsHtml = '<h6>Audit Findings:</h6>';
+            results.forEach(finding => {
+                const severityClass = finding.severity === 'high' ? 'danger' : finding.severity === 'medium' ? 'warning' : 'info';
+                findingsHtml += `
+                    <div class="alert alert-${severityClass} alert-sm">
+                        <strong>${finding.device_name}:</strong> ${finding.finding_description}
+                        <small class="d-block">Severity: ${finding.severity}</small>
+                    </div>
+                `;
+            });
+            findingsDiv.innerHTML = findingsHtml;
+        } else {
+            findingsDiv.innerHTML = '<div class="alert alert-success">No issues found!</div>';
+        }
+    }
+
+    async function startTroubleshooting() {
+        const problemDomain = document.getElementById('problem-domain').value;
+        const problemDescription = document.getElementById('problem-description').value;
+        const affectedDevices = Array.from(document.getElementById('affected-devices').selectedOptions).map(option => option.value);
+        
+        if (!problemDescription.trim()) {
+            showToast('Please describe the problem', 'warning');
+            return;
+        }
+        
+        if (affectedDevices.length === 0) {
+            showToast('Please select at least one affected device', 'warning');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/operations/troubleshoot/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    problem_description: problemDescription,
+                    problem_domain: problemDomain,
+                    affected_devices: affectedDevices,
+                    symptoms: []
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                currentTroubleshootSession = result.session_id;
+                showToast('AI troubleshooting started', 'success');
+                displayTroubleshootResults(result.initial_analysis);
+            } else {
+                showToast(`Troubleshooting failed: ${result.detail}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error starting troubleshooting:', error);
+            showToast('Failed to start troubleshooting', 'error');
+        }
+    }
+
+    function displayTroubleshootResults(analysis) {
+        const resultsDiv = document.getElementById('troubleshoot-results');
+        
+        if (analysis && analysis.analysis) {
+            resultsDiv.innerHTML = `
+                <div class="troubleshoot-analysis">
+                    <h6>AI Analysis</h6>
+                    <div class="alert alert-info">
+                        ${analysis.analysis}
+                    </div>
+                    ${analysis.recommendations ? `
+                        <h6>Recommendations</h6>
+                        <ul class="list-group list-group-flush">
+                            ${analysis.recommendations.map(rec => `<li class="list-group-item">${rec}</li>`).join('')}
+                        </ul>
+                    ` : ''}
+                </div>
+            `;
+        } else {
+            resultsDiv.innerHTML = '<div class="alert alert-warning">No analysis available</div>';
+        }
+    }
+
+    async function createBaseline() {
+        const baselineName = document.getElementById('baseline-name').value;
+        const baselineType = document.getElementById('baseline-type').value;
+        const environment = document.getElementById('baseline-environment').value;
+        const selectedDevices = Array.from(document.querySelectorAll('.device-checkbox:checked')).map(cb => cb.value);
+        
+        if (!baselineName.trim()) {
+            showToast('Please enter a baseline name', 'warning');
+            return;
+        }
+        
+        if (selectedDevices.length === 0) {
+            showToast('Please select at least one device', 'warning');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/operations/baseline/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: baselineName,
+                    description: `AI-generated baseline for ${environment} environment`,
+                    device_ids: selectedDevices,
+                    baseline_type: baselineType,
+                    environment: environment
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                showToast('Baseline created successfully', 'success');
+                displayBaselineResult(result);
+                // Clear form
+                document.getElementById('baseline-name').value = '';
+            } else {
+                showToast(`Baseline creation failed: ${result.detail}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error creating baseline:', error);
+            showToast('Failed to create baseline', 'error');
+        }
+    }
+
+    function displayBaselineResult(result) {
+        const driftAnalysis = document.getElementById('drift-analysis');
+        
+        driftAnalysis.innerHTML = `
+            <div class="baseline-result">
+                <div class="alert alert-success">
+                    <h6>Baseline Created</h6>
+                    <p>Baseline ID: ${result.baseline_id}</p>
+                    <p>Status: ${result.creation_status}</p>
+                </div>
+                ${result.recommendations ? `
+                    <div class="alert alert-info">
+                        <h6>AI Recommendations</h6>
+                        <p>${result.recommendations.recommendations || 'No specific recommendations at this time.'}</p>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    function updateProgressBar(operationId, progress) {
+        const progressBar = document.getElementById(`progress-${operationId}`);
+        if (progressBar) {
+            progressBar.style.width = `${progress}%`;
+            progressBar.textContent = `${progress}%`;
+        }
+    }
+
+    function updateDeviceStatus(deviceId, status) {
+        const deviceElement = document.getElementById(`device-${deviceId}`);
+        if (deviceElement) {
+            const statusClass = status === 'connected' ? 'success' : status === 'error' ? 'danger' : 'warning';
+            deviceElement.className = `badge bg-${statusClass}`;
+            deviceElement.textContent = status;
+        }
+    }
+
+    function displayCommandResult(result) {
+        // You can implement this to show command results in a modal or dedicated area
+        console.log('Command result:', result);
+    }
+
+    function updateTroubleshootProgress(update) {
+        if (update.session_id === currentTroubleshootSession) {
+            // Update troubleshooting progress
+            displayTroubleshootResults(update.data);
+        }
+    }
+
+    function refreshAuditResults() {
+        if (currentAuditSession) {
+            loadAuditResults(currentAuditSession);
+        }
+        showToast('Audit results refreshed', 'info');
+    }
+
+    function viewOperationDetails(operationId) {
+        // Implement operation details view
+        console.log('Viewing operation details for:', operationId);
+        showToast('Operation details feature coming soon', 'info');
+    }
+
+    function showQuickActionsModal() {
+        showToast('Quick actions feature coming soon', 'info');
+    }
+</script>
+{% endblock %}
+

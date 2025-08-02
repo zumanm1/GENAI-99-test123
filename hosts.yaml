@@ -1,0 +1,29 @@
+lab-router-1:
+  hostname: 192.168.1.10
+  username: admin
+  password: admin123
+  platform: cisco_ios
+  port: 23
+  groups:
+    - telnet_devices
+    - cisco_routers
+
+lab-switch-1:  
+  hostname: 192.168.1.20
+  username: admin
+  password: admin123
+  platform: cisco_ios
+  port: 23
+  groups:
+    - telnet_devices
+    - cisco_switches
+
+lab-router-2:
+  hostname: 192.168.1.11
+  username: admin  
+  password: admin123
+  platform: cisco_ios
+  port: 23
+  groups:
+    - telnet_devices
+    - cisco_routers

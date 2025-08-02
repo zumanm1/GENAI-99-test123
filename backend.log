@@ -1,40 +1,68 @@
-/home/test/Documents/GENAI-99-test123/main.py:19: DeprecationWarning: 
-        on_event is deprecated, use lifespan event handlers instead.
-
-        Read more about it in the
-        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
-        
-  @app.on_event("startup")
-INFO:     Started server process [583776]
+nohup: ignoring input
+Starting FastAPI application on port 5000
+Health endpoint available at: http://localhost:5000/health
+INFO:     Started server process [1899143]
 INFO:     Waiting for application startup.
-ERROR:    Traceback (most recent call last):
-  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/starlette/routing.py", line 677, in lifespan
-    async with self.lifespan_context(app) as maybe_state:
-  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/starlette/routing.py", line 566, in __aenter__
-    await self._router.startup()
-  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/starlette/routing.py", line 656, in startup
-    handler()
-  File "/home/test/Documents/GENAI-99-test123/main.py", line 40, in startup_event
-    llm_manager.add_provider("groq", groq_settings)
-  File "/home/test/Documents/GENAI-99-test123/backend/ai/llm_manager.py", line 31, in add_provider
-    provider_instance = LLMFactory.create_llm(provider=settings.provider, **settings.to_dict())
-                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/test/Documents/GENAI-99-test123/backend/ai/llm_providers.py", line 115, in create_llm
-    return GroqProvider(**filtered_kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/test/Documents/GENAI-99-test123/backend/ai/llm_providers.py", line 69, in __init__
-    self.client = Groq(api_key=api_key)
-                  ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/groq/_client.py", line 99, in __init__
-    super().__init__(
-  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/groq/_base_client.py", line 824, in __init__
-    self._client = http_client or SyncHttpxClientWrapper(
-                                  ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/groq/_base_client.py", line 722, in __init__
-    super().__init__(**kwargs)
-TypeError: Client.__init__() got an unexpected keyword argument 'proxies'
-
-ERROR:    Application startup failed. Exiting.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:5000 (Press CTRL+C to quit)
 Initializing LLM providers...
-Found OpenAI API key. Configuring provider...
-Found Groq API key. Configuring provider...
+OpenAI API key not found or is a placeholder. Skipping.
+Groq API key not found or is a placeholder. Skipping.
+OpenRouter API key not found or is a placeholder. Skipping.
+INFO:     127.0.0.1:57306 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60484 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60488 - "GET /js/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60484 - "GET /css/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60488 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60488 - "GET /api/device-status-chart HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60484 - "GET /api/operations-timeline HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60500 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37156 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41370 - "GET /api/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40280 - "GET /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40282 - "GET /devices HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40282 - "GET /api/devices HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40282 - "GET /settings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37472 - "GET /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54968 - "GET /operations HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54968 - "GET /api/operations HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:54978 - "GET /api/devices HTTP/1.1" 404 Not Found
+INFO:     ('127.0.0.1', 54992) - "WebSocket /ws/operations" [accepted]
+INFO:     connection open
+2025-08-02 20:44:24,606 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-08-02 20:44:24,613 INFO sqlalchemy.engine.Engine SELECT operations_log.id AS operations_log_id, operations_log.user_id AS operations_log_user_id, operations_log.device_id AS operations_log_device_id, operations_log.operation_type AS operations_log_operation_type, operations_log.status AS operations_log_status, operations_log.command AS operations_log_command, operations_log.result AS operations_log_result, operations_log.error_message AS operations_log_error_message, operations_log.execution_time_ms AS operations_log_execution_time_ms, operations_log.created_at AS operations_log_created_at 
+FROM operations_log ORDER BY operations_log.created_at DESC
+ LIMIT ? OFFSET ?
+2025-08-02 20:44:24,614 INFO sqlalchemy.engine.Engine [generated in 0.00089s] (100, 0)
+INFO:     127.0.0.1:54978 - "GET /api/operations/ HTTP/1.1" 200 OK
+2025-08-02 20:44:24,635 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     connection closed
+INFO:     127.0.0.1:54968 - "GET /automation HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54978 - "GET /api/v1/automation/templates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54968 - "GET /automation HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54978 - "GET /api/v1/automation/templates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54968 - "GET /dashboard HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54978 - "POST /api/v1/analytics/404 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48528 - "GET /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48528 - "GET /settings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48528 - "GET /devices HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48528 - "GET /api/devices HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:48528 - "GET /operations HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48528 - "GET /api/operations HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:42344 - "GET /api/devices HTTP/1.1" 404 Not Found
+INFO:     ('127.0.0.1', 42352) - "WebSocket /ws/operations" [accepted]
+INFO:     connection open
+2025-08-02 20:44:50,546 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-08-02 20:44:50,546 INFO sqlalchemy.engine.Engine SELECT operations_log.id AS operations_log_id, operations_log.user_id AS operations_log_user_id, operations_log.device_id AS operations_log_device_id, operations_log.operation_type AS operations_log_operation_type, operations_log.status AS operations_log_status, operations_log.command AS operations_log_command, operations_log.result AS operations_log_result, operations_log.error_message AS operations_log_error_message, operations_log.execution_time_ms AS operations_log_execution_time_ms, operations_log.created_at AS operations_log_created_at 
+FROM operations_log ORDER BY operations_log.created_at DESC
+ LIMIT ? OFFSET ?
+2025-08-02 20:44:50,546 INFO sqlalchemy.engine.Engine [cached since 25.93s ago] (100, 0)
+INFO:     127.0.0.1:42344 - "GET /api/operations/ HTTP/1.1" 200 OK
+2025-08-02 20:44:50,553 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     connection closed
+INFO:     127.0.0.1:48528 - "GET /automation HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42344 - "GET /api/v1/automation/templates HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1899143]

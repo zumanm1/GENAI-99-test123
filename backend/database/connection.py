@@ -8,13 +8,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Database configuration
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
-
-DATABASE_URL = os.getenv("DATABASE_URL", f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+# Use DB_URL for SQLite or DATABASE_URL for PostgreSQL
+DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("DB_URL", "sqlite:///data/app.db")
 
 # Create engine
 engine = create_engine(DATABASE_URL, echo=True)

@@ -11,9 +11,12 @@ try:
 except ImportError:
     Groq = None
 
+# We'll use requests directly to call the OpenRouter API
 try:
-    from openrouter import OpenRouter # Assuming 'openrouter' is the package name
+    import requests
+    OpenRouter = object  # Use a placeholder to indicate the dependency is available
 except ImportError:
+    requests = None
     OpenRouter = None
 
 class LLMProvider(ABC):
@@ -68,8 +71,10 @@ class GroqProvider(LLMProvider):
             raise ImportError("Groq library is not installed. Please install it with 'pip install groq'.")
         self.client = Groq(api_key=api_key)
         self.model = model
+        # Filter kwargs to only include parameters that the Groq client accepts
+        valid_params = ["temperature", "max_tokens"]
         self.default_params = {
-            key: kwargs.get(key) for key in ["temperature", "max_tokens"] if kwargs.get(key) is not None
+            key: kwargs.get(key) for key in valid_params if kwargs.get(key) is not None
         }
 
     def generate_text(self, prompt: str, **kwargs) -> str:
@@ -85,10 +90,13 @@ class GroqProvider(LLMProvider):
 
 class OpenRouterProvider(LLMProvider):
     def __init__(self, api_key: str, model: str = "openai/gpt-4", **kwargs):
+        if requests is None:
+            raise ImportError("requests library is not installed. Please install it with 'pip install requests'.")
         if OpenRouter is None:
-            raise ImportError("OpenRouter library is not installed. Please install it with 'pip install openrouter-py'.")
-        self.client = OpenRouter(api_key=api_key)
-        self.model = model
+            raise ImportError("OpenRouter library is not installed. Please install it with 'pip install openrouter'.")
+        # Use a simple object to hold model information
+        self.client = type('obj', (object,), {'model': model})
+        self.api_key = api_key
         self.default_params = {
             key: kwargs.get(key) for key in ["temperature", "max_tokens"] if kwargs.get(key) is not None
         }
@@ -96,13 +104,31 @@ class OpenRouterProvider(LLMProvider):
     def generate_text(self, prompt: str, **kwargs) -> str:
         request_params = self.default_params.copy()
         request_params.update(kwargs)
-
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
+        
+        # Set the API key in headers for each request
+        import requests
+        api = "https://openrouter.ai/api/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        # Prepare messages in the required format
+        messages = [{"role": "user", "content": prompt}]
+        
+        # Prepare the data payload
+        data = {
+            "model": self.client.model,
+            "messages": messages,
             **request_params
-        )
-        return response.choices[0].message.content
+        }
+        
+        # Make the request
+        response = requests.post(api, json=data, headers=headers)
+        response.raise_for_status()
+        
+        # Extract and return the generated text
+        return response.json()["choices"][0]["message"]["content"]
 
 class LLMFactory:
     @staticmethod

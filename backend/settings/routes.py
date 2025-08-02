@@ -27,7 +27,7 @@ def get_settings(db: Session = Depends(get_db)):
         log_api_request("GET", "/settings/", status.HTTP_500_INTERNAL_SERVER_ERROR)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@router.get("/llm")
+@router.get("/settings/genai/llm")
 def get_llm_settings(db: Session = Depends(get_db)):
     """Get current LLM settings"""
     try:

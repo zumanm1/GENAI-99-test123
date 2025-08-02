@@ -151,8 +151,8 @@
         // Set active navigation link based on current page
         document.addEventListener('DOMContentLoaded', function() {
             const navLinks = document.querySelectorAll('.nav-links a');
-            const currentPath = window.location.pathname;
-
+const currentPath = window.location.pathname;
+        console.log('Navigating to', currentPath);
             navLinks.forEach(link => {
                 // Remove existing active class
                 link.classList.remove('active');
@@ -166,7 +166,7 @@
     </script>
     <script>
         function fetchUserData() {
-            fetch('http://localhost:8002/api/v1/users/me')
+fetch('http://localhost:5000/api/v1/users/me')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
@@ -231,22 +231,22 @@
             fetchUserData();
 
             document.getElementById('action-run-audit').addEventListener('click', () => {
-                handleActionClick('http://localhost:8002/api/actions/run-audit', 'Network audit started successfully.');
+handleActionClick('http://localhost:5000/api/v1/actions/run-audit', 'Network audit started successfully.');
             });
 
             document.getElementById('action-deploy-config').addEventListener('click', () => {
-                handleActionClick('http://localhost:8002/api/actions/deploy-config', 'Configuration deployment initiated.');
+handleActionClick('http://localhost:5000/api/v1/actions/deploy-config', 'Configuration deployment initiated.');
             });
 
             document.getElementById('action-check-health').addEventListener('click', () => {
-                handleActionClick('http://localhost:8002/api/actions/check-health', 'System health check is running.');
+handleActionClick('http://localhost:5000/api/v1/actions/check-health', 'System health check is running.');
             });
         });
 
         async function fetchDashboardData() {
             try {
                 // The backend runs on port 8002
-                const response = await fetch('http://localhost:8002/api/v1/dashboard/overview');
+const response = await fetch('http://localhost:5000/api/v1/dashboard/overview');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }

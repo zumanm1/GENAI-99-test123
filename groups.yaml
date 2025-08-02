@@ -1,0 +1,13 @@
+telnet_devices:
+  connection_options:
+    netmiko:
+      platform: cisco_ios
+      port: 23
+      extras:
+        device_type: cisco_ios
+
+cisco_routers:
+  platform: cisco_ios
+
+cisco_switches:
+  platform: cisco_ios

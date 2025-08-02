@@ -1,0 +1,825 @@
+# Python/Flask Translation: MainLayout.tsx & AppSidebar.tsx
+
+## Current React Implementation Analysis
+The MainLayout and AppSidebar components provide the application's navigation structure, sidebar management, and user interface layout using React context providers and state management.
+
+## Python/Flask Equivalent Implementation
+
+### Base Template (templates/base.html)
+```html
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Network Automation Platform{% endblock %}</title>
+    
+    <!-- Bootstrap CSS (equivalent to Tailwind/shadcn styling) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <!-- Custom CSS for layout (equivalent to Tailwind custom styles) -->
+    <link href="{{ url_for('static', filename='css/layout.css') }}" rel="stylesheet">
+    
+    <!-- Font Awesome for icons (equivalent to Lucide icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Main Application Layout (equivalent to React MainLayout) -->
+    <div class="d-flex flex-grow-1" id="app-layout">
+        <!-- Sidebar (equivalent to React AppSidebar) -->
+        <nav class="sidebar bg-dark text-white" id="sidebar">
+            <!-- Sidebar Header (equivalent to React branding section) -->
+            <div class="sidebar-header p-3 border-bottom border-secondary">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-network-wired fa-2x text-primary me-2"></i>
+                    <div class="sidebar-brand">
+                        <h5 class="mb-0 text-white">NetworkOps</h5>
+                        <small class="text-muted">AI Platform</small>
+                    </div>
+                </div>
+                
+                <!-- Sidebar Toggle Button (equivalent to React SidebarTrigger) -->
+                <button class="btn btn-link text-white p-0 ms-auto d-md-none" id="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <!-- Navigation Menu (equivalent to React navigation items) -->
+            <div class="sidebar-nav flex-grow-1">
+                <ul class="nav nav-pills flex-column p-3">
+                    {% set navigation_items = [
+                        {'route': 'dashboard.dashboard_home', 'icon': 'fas fa-tachometer-alt', 'label': 'Dashboard', 'description': 'System overview'},
+                        {'route': 'automation.automation_home', 'icon': 'fas fa-robot', 'label': 'Automation', 'description': 'AI-powered configuration'},
+                        {'route': 'operations.operations_home', 'icon': 'fas fa-cogs', 'label': 'Operations', 'description': 'Network operations management'},
+                        {'route': 'devices.devices_home', 'icon': 'fas fa-server', 'label': 'Devices', 'description': 'Device inventory'},
+                        {'route': 'settings.settings_home', 'icon': 'fas fa-cog', 'label': 'Settings', 'description': 'Application preferences'},
+                        {'route': 'chat.chat_home', 'icon': 'fas fa-comments', 'label': 'Chat', 'description': 'AI assistance interface'}
+                    ] %}
+                    
+                    {% for item in navigation_items %}
+                    <li class="nav-item mb-1">
+                        <a class="nav-link d-flex align-items-center py-2 px-3 rounded
+                                 {% if request.endpoint == item.route %}active bg-primary text-white
+                                 {% else %}text-light{% endif %}"
+                           href="{{ url_for(item.route) }}"
+                           data-bs-toggle="tooltip" 
+                           data-bs-placement="right" 
+                           title="{{ item.description }}">
+                            <i class="{{ item.icon }} me-3"></i>
+                            <span class="sidebar-text">{{ item.label }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <!-- Sidebar Footer (equivalent to React user section) -->
+            <div class="sidebar-footer border-top border-secondary p-3">
+                <div class="d-flex align-items-center">
+                    <div class="avatar bg-primary rounded-circle d-flex align-items-center justify-center me-2"
+                         style="width: 32px; height: 32px;">
+                        <i class="fas fa-user text-white"></i>
+                    </div>
+                    <div class="flex-grow-1 sidebar-text">
+                        <div class="text-white small">{{ current_user.email if current_user.is_authenticated else 'Guest' }}</div>
+                        <div class="text-muted small">Admin</div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-link text-white p-0" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('settings.settings_home') }}">
+                                <i class="fas fa-cog me-2"></i>Settings
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Main Content Area (equivalent to React main content) -->
+        <main class="main-content flex-grow-1 d-flex flex-column">
+            <!-- Top Header (equivalent to React header) -->
+            <header class="main-header bg-white border-bottom p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <!-- Mobile Sidebar Toggle -->
+                        <button class="btn btn-outline-secondary d-md-none me-3" id="mobile-sidebar-toggle">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        
+                        <!-- Breadcrumb (equivalent to React breadcrumb) -->
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item">
+                                    <a href="{{ url_for('dashboard.dashboard_home') }}">Home</a>
+                                </li>
+                                {% block breadcrumb %}{% endblock %}
+                            </ol>
+                        </nav>
+                    </div>
+                    
+                    <!-- Header Actions (equivalent to React header actions) -->
+                    <div class="d-flex align-items-center">
+                        <!-- Search (equivalent to React search functionality) -->
+                        <div class="search-container me-3">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="Search devices, configs..." id="global-search">
+                                <button class="btn btn-outline-secondary" type="button">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Notifications (equivalent to React notifications) -->
+                        <div class="dropdown me-3">
+                            <button class="btn btn-outline-secondary position-relative" data-bs-toggle="dropdown">
+                                <i class="fas fa-bell"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notification-count">
+                                    3
+                                </span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end notification-dropdown">
+                                <li class="dropdown-header">Notifications</li>
+                                <li><a class="dropdown-item" href="#">
+                                    <div class="d-flex">
+                                        <i class="fas fa-exclamation-triangle text-warning me-2 mt-1"></i>
+                                        <div>
+                                            <div class="fw-semibold">R17-EDGE-02 Warning</div>
+                                            <small class="text-muted">High CPU usage detected</small>
+                                        </div>
+                                    </div>
+                                </a></li>
+                                <li><a class="dropdown-item" href="#">
+                                    <div class="d-flex">
+                                        <i class="fas fa-check-circle text-success me-2 mt-1"></i>
+                                        <div>
+                                            <div class="fw-semibold">Config Deployed</div>
+                                            <small class="text-muted">R20-BRANCH-03 updated successfully</small>
+                                        </div>
+                                    </div>
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-center" href="#">View all notifications</a></li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Theme Toggle (equivalent to React theme switching) -->
+                        <button class="btn btn-outline-secondary me-3" id="theme-toggle" title="Toggle theme">
+                            <i class="fas fa-moon" id="theme-icon"></i>
+                        </button>
+                        
+                        <!-- User Menu (equivalent to React user dropdown) -->
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary d-flex align-items-center" data-bs-toggle="dropdown">
+                                <div class="avatar bg-primary rounded-circle d-flex align-items-center justify-center me-2"
+                                     style="width: 28px; height: 28px;">
+                                    <i class="fas fa-user text-white small"></i>
+                                </div>
+                                <span class="d-none d-md-inline">{{ current_user.email.split('@')[0] if current_user.is_authenticated else 'Guest' }}</span>
+                                <i class="fas fa-chevron-down ms-2"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li class="dropdown-header">Account</li>
+                                <li><a class="dropdown-item" href="{{ url_for('settings.settings_home') }}">
+                                    <i class="fas fa-user-cog me-2"></i>Profile Settings
+                                </a></li>
+                                <li><a class="dropdown-item" href="#">
+                                    <i class="fas fa-question-circle me-2"></i>Help & Support
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Sign Out
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Flash Messages (equivalent to React toast notifications) -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show mx-3 mt-3" role="alert">
+                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' }} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Page Content (equivalent to React children prop) -->
+            <div class="content-area flex-grow-1 bg-light">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    
+    <!-- Sidebar Overlay for Mobile (equivalent to React mobile backdrop) -->
+    <div class="sidebar-overlay d-md-none" id="sidebar-overlay"></div>
+    
+    <!-- Toast Container (equivalent to React toast system) -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container"></div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom Layout JavaScript (equivalent to React functionality) -->
+    <script src="{{ url_for('static', filename='js/layout.js') }}"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>
+```
+
+### Layout CSS (static/css/layout.css)
+```css
+/* Layout styles (equivalent to Tailwind custom CSS and React styled components) */
+
+:root {
+    --sidebar-width: 280px;
+    --sidebar-collapsed-width: 60px;
+    --header-height: 70px;
+    --primary-color: #0d6efd;
+    --sidebar-bg: #1a1d29;
+    --sidebar-text: #8a8d93;
+    --sidebar-hover: #2d3039;
+}
+
+/* Sidebar Styles (equivalent to React sidebar component) */
+.sidebar {
+    width: var(--sidebar-width);
+    min-height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    background: var(--sidebar-bg) !important;
+    transition: all 0.3s ease;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
+}
+
+.sidebar.collapsed .sidebar-text {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-brand {
+    display: none;
+}
+
+/* Main Content Area (equivalent to React main layout) */
+.main-content {
+    margin-left: var(--sidebar-width);
+    transition: margin-left 0.3s ease;
+    min-height: 100vh;
+}
+
+.sidebar.collapsed + .main-content {
+    margin-left: var(--sidebar-collapsed-width);
+}
+
+/* Header Styles (equivalent to React header component) */
+.main-header {
+    height: var(--header-height);
+    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-bottom: 1px solid rgba(0,0,0,0.1) !important;
+}
+
+/* Navigation Styles (equivalent to React navigation components) */
+.sidebar-nav .nav-link {
+    color: var(--sidebar-text);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.sidebar-nav .nav-link:hover {
+    background: var(--sidebar-hover);
+    color: white;
+    transform: translateX(4px);
+}
+
+.sidebar-nav .nav-link.active {
+    background: var(--primary-color) !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+}
+
+/* Search Styles */
+.search-container {
+    min-width: 250px;
+}
+
+/* Notification Dropdown */
+.notification-dropdown {
+    width: 320px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Avatar Styles */
+.avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+}
+
+/* Mobile Responsiveness (equivalent to React responsive design) */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        width: var(--sidebar-width);
+    }
+    
+    .sidebar.show {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+        display: none;
+    }
+    
+    .sidebar-overlay.show {
+        display: block;
+    }
+    
+    .search-container {
+        min-width: 200px;
+    }
+}
+
+/* Dark Theme Support (equivalent to React theme switching) */
+[data-bs-theme="dark"] {
+    --sidebar-bg: #0d1117;
+    --sidebar-text: #7d8590;
+    --sidebar-hover: #21262d;
+}
+
+[data-bs-theme="dark"] .main-header {
+    background: rgba(13, 17, 23, 0.95) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+    color: white;
+}
+
+[data-bs-theme="dark"] .content-area {
+    background: #0d1117 !important;
+}
+
+/* Animation Classes (equivalent to React transitions) */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Toast Styles (equivalent to React toast system) */
+.toast-custom {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Loading States */
+.loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+```
+
+### Layout JavaScript (static/js/layout.js)
+```javascript
+// Layout functionality (equivalent to React hooks and state management)
+
+class LayoutManager {
+    constructor() {
+        this.sidebar = document.getElementById('sidebar');
+        this.sidebarOverlay = document.getElementById('sidebar-overlay');
+        this.mobileToggle = document.getElementById('mobile-sidebar-toggle');
+        this.sidebarToggle = document.getElementById('sidebar-toggle');
+        this.themeToggle = document.getElementById('theme-toggle');
+        this.globalSearch = document.getElementById('global-search');
+        this.toastContainer = document.getElementById('toast-container');
+        
+        this.init();
+    }
+    
+    init() {
+        this.setupSidebarToggle();
+        this.setupThemeToggle();
+        this.setupSearch();
+        this.setupTooltips();
+        this.setupNotifications();
+        this.loadUserPreferences();
+    }
+    
+    // Sidebar Management (equivalent to React sidebar state)
+    setupSidebarToggle() {
+        // Mobile sidebar toggle
+        if (this.mobileToggle) {
+            this.mobileToggle.addEventListener('click', () => {
+                this.toggleMobileSidebar();
+            });
+        }
+        
+        // Desktop sidebar collapse
+        if (this.sidebarToggle) {
+            this.sidebarToggle.addEventListener('click', () => {
+                this.toggleSidebarCollapse();
+            });
+        }
+        
+        // Overlay click to close mobile sidebar
+        if (this.sidebarOverlay) {
+            this.sidebarOverlay.addEventListener('click', () => {
+                this.closeMobileSidebar();
+            });
+        }
+        
+        // Close mobile sidebar on route change
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('.sidebar .nav-link')) {
+                this.closeMobileSidebar();
+            }
+        });
+    }
+    
+    toggleMobileSidebar() {
+        // Mobile sidebar toggle (equivalent to React mobile state)
+        this.sidebar.classList.toggle('show');
+        this.sidebarOverlay.classList.toggle('show');
+        document.body.classList.toggle('sidebar-open');
+    }
+    
+    closeMobileSidebar() {
+        // Close mobile sidebar (equivalent to React state update)
+        this.sidebar.classList.remove('show');
+        this.sidebarOverlay.classList.remove('show');
+        document.body.classList.remove('sidebar-open');
+    }
+    
+    toggleSidebarCollapse() {
+        // Desktop sidebar collapse (equivalent to React collapse state)
+        this.sidebar.classList.toggle('collapsed');
+        localStorage.setItem('sidebarCollapsed', this.sidebar.classList.contains('collapsed'));
+    }
+    
+    // Theme Management (equivalent to React theme context)
+    setupThemeToggle() {
+        if (this.themeToggle) {
+            this.themeToggle.addEventListener('click', () => {
+                this.toggleTheme();
+            });
+        }
+        
+        // Initialize theme from localStorage
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        this.setTheme(savedTheme);
+    }
+    
+    toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        this.setTheme(newTheme);
+    }
+    
+    setTheme(theme) {
+        document.documentElement.setAttribute('data-bs-theme', theme);
+        localStorage.setItem('theme', theme);
+        
+        // Update theme icon
+        const themeIcon = document.getElementById('theme-icon');
+        if (themeIcon) {
+            themeIcon.className = theme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+        }
+    }
+    
+    // Search Functionality (equivalent to React search state)
+    setupSearch() {
+        if (this.globalSearch) {
+            this.globalSearch.addEventListener('input', (e) => {
+                this.debounce(() => {
+                    this.performSearch(e.target.value);
+                }, 300)();
+            });
+            
+            this.globalSearch.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.performSearch(e.target.value);
+                }
+            });
+        }
+    }
+    
+    performSearch(query) {
+        if (query.trim().length < 2) return;
+        
+        // Search functionality (equivalent to React search API calls)
+        console.log('Searching for:', query);
+        // Implement actual search logic here
+        this.showToast(`Searching for: ${query}`, 'info');
+    }
+    
+    // Tooltip Management (equivalent to React tooltip components)
+    setupTooltips() {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+    
+    // Notification System (equivalent to React notification state)
+    setupNotifications() {
+        this.updateNotificationCount();
+        this.pollForNotifications();
+    }
+    
+    updateNotificationCount() {
+        // Update notification badge (equivalent to React notification state)
+        const badge = document.getElementById('notification-count');
+        if (badge) {
+            // This would be fetched from API in real implementation
+            const count = 3;
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'block' : 'none';
+        }
+    }
+    
+    pollForNotifications() {
+        // Poll for new notifications (equivalent to React useEffect polling)
+        setInterval(() => {
+            this.fetchNotifications();
+        }, 30000); // Poll every 30 seconds
+    }
+    
+    fetchNotifications() {
+        // Fetch notifications from API (equivalent to React API calls)
+        fetch('/api/notifications')
+            .then(response => response.json())
+            .then(data => {
+                this.updateNotificationCount();
+                // Update notification dropdown content
+            })
+            .catch(error => {
+                console.error('Error fetching notifications:', error);
+            });
+    }
+    
+    // Toast System (equivalent to React toast hooks)
+    showToast(message, type = 'info', duration = 5000) {
+        const toast = this.createToastElement(message, type);
+        this.toastContainer.appendChild(toast);
+        
+        const bsToast = new bootstrap.Toast(toast, {
+            delay: duration
+        });
+        
+        bsToast.show();
+        
+        // Remove toast element after it's hidden
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
+    
+    createToastElement(message, type) {
+        const toastElement = document.createElement('div');
+        toastElement.className = 'toast align-items-center toast-custom';
+        toastElement.setAttribute('role', 'alert');
+        
+        const iconMap = {
+            success: 'fa-check-circle text-success',
+            error: 'fa-exclamation-triangle text-danger',
+            warning: 'fa-exclamation-triangle text-warning',
+            info: 'fa-info-circle text-info'
+        };
+        
+        const icon = iconMap[type] || iconMap.info;
+        
+        toastElement.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center">
+                    <i class="fas ${icon} me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        return toastElement;
+    }
+    
+    // User Preferences (equivalent to React user context)
+    loadUserPreferences() {
+        // Load user preferences from localStorage
+        const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        if (sidebarCollapsed) {
+            this.sidebar.classList.add('collapsed');
+        }
+    }
+    
+    // Utility Functions
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+}
+
+// Global Layout Functions (equivalent to React utility functions)
+window.showToast = function(message, type = 'info', duration = 5000) {
+    if (window.layoutManager) {
+        window.layoutManager.showToast(message, type, duration);
+    }
+};
+
+window.updateNotificationCount = function(count) {
+    const badge = document.getElementById('notification-count');
+    if (badge) {
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'block' : 'none';
+    }
+};
+
+// Initialize Layout Manager (equivalent to React component initialization)
+document.addEventListener('DOMContentLoaded', function() {
+    window.layoutManager = new LayoutManager();
+    
+    // Add loading state to navigation links
+    document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+        link.addEventListener('click', function() {
+            // Show loading state on navigation
+            const icon = this.querySelector('i');
+            const originalClass = icon.className;
+            icon.className = 'fas fa-spinner fa-spin me-3';
+            
+            // Reset after a short delay (page will likely load before this)
+            setTimeout(() => {
+                icon.className = originalClass;
+            }, 1000);
+        });
+    });
+    
+    // Initialize page animations
+    const contentArea = document.querySelector('.content-area');
+    if (contentArea) {
+        contentArea.classList.add('fade-in');
+    }
+});
+
+// Handle window resize (equivalent to React responsive hooks)
+window.addEventListener('resize', function() {
+    if (window.innerWidth >= 768) {
+        // Close mobile sidebar on desktop resize
+        if (window.layoutManager) {
+            window.layoutManager.closeMobileSidebar();
+        }
+    }
+});
+
+// Export for use in other scripts (equivalent to React exports)
+window.LayoutManager = LayoutManager;
+```
+
+### Flask Context Processor (app.py addition)
+```python
+@app.context_processor
+def inject_layout_context():
+    """Inject layout context data (equivalent to React providers)"""
+    return {
+        'current_user': current_user,
+        'app_name': 'Network Automation Platform',
+        'app_version': '1.0.0',
+        'navigation_items': get_navigation_items(),
+        'unread_notifications': get_unread_notification_count() if current_user.is_authenticated else 0
+    }
+
+def get_navigation_items():
+    """Get navigation items with active state (equivalent to React navigation state)"""
+    items = [
+        {
+            'route': 'dashboard.dashboard_home',
+            'icon': 'fas fa-tachometer-alt',
+            'label': 'Dashboard',
+            'description': 'System overview'
+        },
+        {
+            'route': 'automation.automation_home',
+            'icon': 'fas fa-robot',
+            'label': 'Automation',
+            'description': 'AI-powered configuration'
+        },
+        {
+            'route': 'operations.operations_home',
+            'icon': 'fas fa-cogs',
+            'label': 'Operations',
+            'description': 'Network operations management'
+        },
+        {
+            'route': 'devices.devices_home',
+            'icon': 'fas fa-server',
+            'label': 'Devices',
+            'description': 'Device inventory'
+        },
+        {
+            'route': 'settings.settings_home',
+            'icon': 'fas fa-cog',
+            'label': 'Settings',
+            'description': 'Application preferences'
+        },
+        {
+            'route': 'chat.chat_home',
+            'icon': 'fas fa-comments',
+            'label': 'Chat',
+            'description': 'AI assistance interface'
+        }
+    ]
+    
+    # Add active state based on current request
+    current_endpoint = request.endpoint
+    for item in items:
+        item['active'] = current_endpoint == item['route']
+    
+    return items
+
+def get_unread_notification_count():
+    """Get unread notification count (equivalent to React notification state)"""
+    # This would query the notifications table
+    return 3  # Mock count for now
+```
+
+## Key Differences from React Implementation
+
+### State Management
+- **React**: Client-side state with hooks (useState, useContext)
+- **Python/Flask**: Server-side session and template context
+
+### Component Structure
+- **React**: JSX components with props and children
+- **Python/Flask**: Jinja2 templates with blocks and inheritance
+
+### Navigation
+- **React**: React Router with programmatic navigation
+- **Python/Flask**: Server-side routing with Flask blueprints
+
+### Responsive Design
+- **React**: CSS-in-JS or Tailwind with responsive hooks
+- **Python/Flask**: Bootstrap responsive classes and media queries
+
+### Real-time Features
+- **React**: WebSocket connections and real-time state updates
+- **Python/Flask**: AJAX polling and server-sent events
+
+This Python/Flask implementation provides equivalent functionality to the React MainLayout and AppSidebar components while leveraging server-side rendering and traditional web application patterns.

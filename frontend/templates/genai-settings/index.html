@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}GenAI Settings - Network Automation Platform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="h3">AI-GENAI Settings</h1>
+        <p class="text-muted">Configure the GenAI settings for LLM, RAG, Agentic, Graph RAG, Embeddings, and Core options.</p>
+        <ul class="nav nav-tabs" id="settingsTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="llm-tab" data-bs-toggle="tab" data-bs-target="#llm" type="button" role="tab" aria-controls="llm" aria-selected="true">LLM Settings</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="rag-tab" data-bs-toggle="tab" data-bs-target="#rag" type="button" role="tab" aria-controls="rag" aria-selected="false">RAG Configuration</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="agentic-tab" data-bs-toggle="tab" data-bs-target="#agentic" type="button" role="tab" aria-controls="agentic" aria-selected="false">Agentic Settings</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="graph-rag-tab" data-bs-toggle="tab" data-bs-target="#graph-rag" type="button" role="tab" aria-controls="graph-rag" aria-selected="false">Graph RAG</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="embeddings-tab" data-bs-toggle="tab" data-bs-target="#embeddings" type="button" role="tab" aria-controls="embeddings" aria-selected="false">Embeddings</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="core-tab" data-bs-toggle="tab" data-bs-target="#core" type="button" role="tab" aria-controls="core" aria-selected="false">Core Settings</button>
+            </li>
+        </ul>
+        <div class="tab-content pt-3" id="settingsTabsContent">
+            <div class="tab-pane fade show active" id="llm" role="tabpanel" aria-labelledby="llm-tab">
+                {% include "genai-settings/llm_settings.html" %}
+            </div>
+            <div class="tab-pane fade" id="rag" role="tabpanel" aria-labelledby="rag-tab">
+                {% include "genai-settings/rag_settings.html" %}
+            </div>
+            <div class="tab-pane fade" id="agentic" role="tabpanel" aria-labelledby="agentic-tab">
+                {% include "genai-settings/agentic_settings.html" %}
+            </div>
+            <div class="tab-pane fade" id="graph-rag" role="tabpanel" aria-labelledby="graph-rag-tab">
+                {% include "genai-settings/graph_rag_settings.html" %}
+            </div>
+            <div class="tab-pane fade" id="embeddings" role="tabpanel" aria-labelledby="embeddings-tab">
+                {% include "genai-settings/embeddings_settings.html" %}
+            </div>
+            <div class="tab-pane fade" id="core" role="tabpanel" aria-labelledby="core-tab">
+                {% include "genai-settings/core_settings.html" %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// JavaScript for handling tab navigation or loading initial settings
+// This script can fetch settings from the API and populate each tab with existing configurations
+</script>
+{% endblock %}
+

@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# DEVELOPMENT NOTE: 
+# During development, DO NOT use Docker or Docker Compose!
+# This setup script prepares the Python environment and database.
+# Docker will be used only after successful development completion.
+
 # Exit immediately if a command exits with a non-zero status.
 set -e
 

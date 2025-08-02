@@ -1,0 +1,133 @@
+2025-08-02 00:52:41,116 -  nornir.core -     INFO -        run() - Running task 'Collect Interface Status' with args {'command_string': 'show interfaces'} on 3 hosts
+2025-08-02 00:52:51,173 - nornir.core.task -    ERROR -      start() - Host 'lab-switch-1': task 'Collect Interface Status' failed with traceback:
+Traceback (most recent call last):
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 1146, in establish_connection
+    self.remote_conn_pre.connect(**ssh_connect_params)
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/paramiko/client.py", line 386, in connect
+    sock.connect(addr)
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/nornir/core/task.py", line 98, in start
+    r = self.task(self, **self.params)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/nornir_netmiko/tasks/netmiko_send_command.py", line 26, in netmiko_send_command
+    net_connect = task.host.get_connection(CONNECTION_NAME, task.nornir.config)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/nornir/core/inventory.py", line 476, in get_connection
+    self.open_connection(
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/nornir/core/inventory.py", line 528, in open_connection
+    conn_obj.open(
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/nornir_netmiko/connections/netmiko.py", line 59, in open
+    connection = ConnectHandler(**parameters)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/netmiko/ssh_dispatcher.py", line 460, in ConnectHandler
+    return ConnectionClass(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 495, in __init__
+    self._open()
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 500, in _open
+    self.establish_connection()
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 1168, in establish_connection
+    raise NetmikoTimeoutException(msg)
+netmiko.exceptions.NetmikoTimeoutException: TCP connection to device failed.
+
+Common causes of this problem are:
+1. Incorrect hostname or IP address.
+2. Wrong TCP port.
+3. Intermediate firewall blocking access.
+
+Device settings: cisco_ios 192.168.1.20:23
+
+
+
+2025-08-02 00:52:51,176 - nornir.core.task -    ERROR -      start() - Host 'lab-router-2': task 'Collect Interface Status' failed with traceback:
+Traceback (most recent call last):
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 1146, in establish_connection
+    self.remote_conn_pre.connect(**ssh_connect_params)
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/paramiko/client.py", line 386, in connect
+    sock.connect(addr)
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/nornir/core/task.py", line 98, in start
+    r = self.task(self, **self.params)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/nornir_netmiko/tasks/netmiko_send_command.py", line 26, in netmiko_send_command
+    net_connect = task.host.get_connection(CONNECTION_NAME, task.nornir.config)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/nornir/core/inventory.py", line 476, in get_connection
+    self.open_connection(
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/nornir/core/inventory.py", line 528, in open_connection
+    conn_obj.open(
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/nornir_netmiko/connections/netmiko.py", line 59, in open
+    connection = ConnectHandler(**parameters)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/netmiko/ssh_dispatcher.py", line 460, in ConnectHandler
+    return ConnectionClass(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 495, in __init__
+    self._open()
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 500, in _open
+    self.establish_connection()
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 1168, in establish_connection
+    raise NetmikoTimeoutException(msg)
+netmiko.exceptions.NetmikoTimeoutException: TCP connection to device failed.
+
+Common causes of this problem are:
+1. Incorrect hostname or IP address.
+2. Wrong TCP port.
+3. Intermediate firewall blocking access.
+
+Device settings: cisco_ios 192.168.1.11:23
+
+
+
+2025-08-02 00:52:51,178 - nornir.core.task -    ERROR -      start() - Host 'lab-router-1': task 'Collect Interface Status' failed with traceback:
+Traceback (most recent call last):
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 1146, in establish_connection
+    self.remote_conn_pre.connect(**ssh_connect_params)
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/paramiko/client.py", line 386, in connect
+    sock.connect(addr)
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/nornir/core/task.py", line 98, in start
+    r = self.task(self, **self.params)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/nornir_netmiko/tasks/netmiko_send_command.py", line 26, in netmiko_send_command
+    net_connect = task.host.get_connection(CONNECTION_NAME, task.nornir.config)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/nornir/core/inventory.py", line 476, in get_connection
+    self.open_connection(
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/nornir/core/inventory.py", line 528, in open_connection
+    conn_obj.open(
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/nornir_netmiko/connections/netmiko.py", line 59, in open
+    connection = ConnectHandler(**parameters)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/netmiko/ssh_dispatcher.py", line 460, in ConnectHandler
+    return ConnectionClass(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 495, in __init__
+    self._open()
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 500, in _open
+    self.establish_connection()
+  File "/home/test/Documents/GENAI-99-test123/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 1168, in establish_connection
+    raise NetmikoTimeoutException(msg)
+netmiko.exceptions.NetmikoTimeoutException: TCP connection to device failed.
+
+Common causes of this problem are:
+1. Incorrect hostname or IP address.
+2. Wrong TCP port.
+3. Intermediate firewall blocking access.
+
+Device settings: cisco_ios 192.168.1.10:23
+
+
+

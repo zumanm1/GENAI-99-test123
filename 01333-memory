@@ -1,0 +1,29 @@
+# Memory File for GENAI-99-test123 Codebase
+
+## Issue Summary
+- **Problem**: Application fails to start due to TypeError in GroqProvider
+- **Error**: "Client.__init__() got an unexpected keyword argument 'proxies'"
+- **Location**: backend/ai/llm_providers.py, GroqProvider.__init__()
+- **Cause**: The GroqProvider is passing all kwargs to the Groq client constructor, but the current Groq library version doesn't accept a 'proxies' parameter
+- **Impact**: Backend fails to start, preventing both backend and frontend from working
+
+## Codebase Structure
+- **Backend**: FastAPI application with AI integration for network automation
+- **Frontend**: Served from frontend/ directory, likely on port 8001
+- **API**: REST endpoints in backend/api/ directory
+- **AI Components**: 
+  - LLM providers (OpenAI, Groq, OpenRouter) in backend/ai/llm_providers.py
+  - LLM manager in backend/ai/llm_manager.py
+  - CrewAI integration in backend/ai/crew.py
+- **Database**: Initialized by init_db.py
+- **Startup**: main.py is the entry point, run.py and start_app.py are likely alternative entry points
+
+## Fix Plan
+1. Modify GroqProvider.__init__() to filter out 'proxies' parameter before passing kwargs to Groq client
+2. The filtered_kwargs should only include parameters that the Groq client accepts: api_key, model, temperature, max_tokens
+3. This maintains compatibility with the LLMFactory pattern while fixing the immediate issue
+
+## Next Steps
+- Fix implemented in backend/ai/llm_providers.py: GroqProvider now filters kwargs to only include valid parameters (temperature, max_tokens)
+- Test the application startup
+- Verify both backend and frontend are working

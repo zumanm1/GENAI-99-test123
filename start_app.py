@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """
-Script to start the Network Automation Application using Docker Compose
+Script to start the Network Automation Application
+
+DEVELOPMENT NOTE: 
+During development, DO NOT use Docker or Docker Compose!
+This script now uses Python/bash to start services directly.
+Docker will be used only after successful development completion.
 """
 
 import subprocess
@@ -65,17 +70,12 @@ def check_docker_compose_installed():
             return False
 
 def build_and_start_services():
-    """Build and start all services using Docker Compose"""
+    """Build and start all services using Python"""
     print("Building and starting services...")
     try:
-        # Use docker compose as it's the modern standard
-        compose_cmd = ['docker', 'compose']
-        
-        # Build and start services
-        print("Running a verbose build for debugging...")
-        # Correctly place the --progress flag before the command
-        verbose_build_cmd = ['docker', 'compose', '--progress=plain', 'build', '--no-cache']
-        run_sudo_command(verbose_build_cmd)
+        # Start services using python
+        print("Starting services...")
+        run_sudo_command(['python', 'main.py'])
         print("Services started successfully!")
         return True
     except subprocess.CalledProcessError as e:
@@ -86,13 +86,9 @@ def check_services_status():
     """Check the status of running services"""
     print("\nChecking service status...")
     try:
-        compose_cmd = ['docker', 'compose']
-        result = run_sudo_command(compose_cmd + ['ps'], check=False)
-
-        if result.returncode != 0:
-            print(f"Could not get service status. Stderr: {result.stderr}")
-            return False
-        
+        # Check service status using python
+        print("Checking service status...")
+        result = run_sudo_command(['python', 'main.py', 'status'])
         print(result.stdout)
         return True
     except subprocess.CalledProcessError as e:
@@ -110,7 +106,7 @@ def show_access_info():
     print("\nDefault Login Credentials:")
     print("Username: admin")
     print("Password: admin123")
-    print("\nTo stop the application, run: docker-compose down")
+    print("\nTo stop the application, run: pkill -f main.py")
     print("="*50)
 
 def main():
@@ -118,17 +114,7 @@ def main():
     print("Network Automation Application - Startup Script")
     print("="*50)
     
-    # Check if Docker is installed
-    if not check_docker_installed():
-        print("\nPlease install Docker before running this application.")
-        print("Visit: https://docs.docker.com/get-docker/")
-        sys.exit(1)
-    
-    # Check if Docker Compose is installed
-    if not check_docker_compose_installed():
-        print("\nPlease install Docker Compose before running this application.")
-        print("Visit: https://docs.docker.com/compose/install/")
-        sys.exit(1)
+    # No need to check for Docker or Docker Compose
     
     # Build and start services
     if not build_and_start_services():

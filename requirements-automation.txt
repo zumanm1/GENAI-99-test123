@@ -1,0 +1,12 @@
+# Automation-specific dependencies
+fastapi==0.104.1
+sqlalchemy==2.0.23
+pydantic==2.5.0
+datetime
+logging
+json
+asyncio
+python-crontab==3.3.0
+
+# Project-specific dependencies (should be covered by the core and AI requirements)
+# You may install or update projects dependencies individually if needed.

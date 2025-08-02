@@ -1,0 +1,444 @@
+{% extends "base.html" %}
+
+{% block title %}GenAI Chat Interface - Network Automation Platform{% endblock %}
+
+{% block content %}
+<div class="row h-100">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm h-100" style="min-height: 600px;">
+            <div class="card-header bg-white border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">
+                            <i data-lucide="message-square" class="me-2"></i>
+                            AI Network Assistant
+                        </h5>
+                        <p class="card-text text-muted mb-0">Get help with network configurations and troubleshooting</p>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline-primary btn-sm me-2" onclick="clearChat()">
+                            <i data-lucide="trash-2" class="me-1"></i>
+                            Clear Chat
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="exportChat()">
+                            <i data-lucide="download" class="me-1"></i>
+                            Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body d-flex flex-column p-0">
+                <!-- Chat Messages Container -->
+                <div class="flex-grow-1 p-3" id="chat-messages" style="overflow-y: auto; max-height: 500px;">
+                    <div class="text-center text-muted py-5">
+                        <i data-lucide="message-circle" style="width: 48px; height: 48px;" class="mb-3"></i>
+                        <h6>Welcome to AI Network Assistant</h6>
+                        <p class="mb-0">Ask me anything about network configurations, troubleshooting, or best practices!</p>
+                    </div>
+                </div>
+                
+                <!-- Chat Input -->
+                <div class="border-top p-3">
+                    <form id="chat-form" class="d-flex gap-2">
+                        <div class="flex-grow-1">
+                            <textarea class="form-control" id="chat-input" rows="2" placeholder="Type your network question here..." style="resize: none;"></textarea>
+                        </div>
+                        <div class="d-flex flex-column gap-1">
+                            <button type="submit" class="btn btn-primary" id="send-btn">
+                                <i data-lucide="send" class="me-1"></i>
+                                Send
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="insertExample()">
+                                <i data-lucide="lightbulb" class="me-1"></i>
+                                Example
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Sidebar -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h6 class="card-title mb-0">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="askQuestion('How do I configure a VLAN?')">
+                            <i data-lucide="layers" class="me-1"></i>
+                            VLAN Setup
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-success btn-sm w-100" onclick="askQuestion('Help me troubleshoot network connectivity issues')">
+                            <i data-lucide="wifi" class="me-1"></i>
+                            Connectivity Issues
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-info btn-sm w-100" onclick="askQuestion('Show me OSPF configuration examples')">
+                            <i data-lucide="route" class="me-1"></i>
+                            OSPF Config
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-warning btn-sm w-100" onclick="askQuestion('What are network security best practices?')">
+                            <i data-lucide="shield" class="me-1"></i>
+                            Security Tips
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let chatHistory = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-resize textarea
+        const chatInput = document.getElementById('chat-input');
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+    });
+
+    document.getElementById('chat-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+        
+        if (message) {
+            sendMessage(message);
+            input.value = '';
+            input.style.height = 'auto';
+        }
+    });
+
+    function sendMessage(message) {
+        const chatMessages = document.getElementById('chat-messages');
+        const sendBtn = document.getElementById('send-btn');
+        
+        // Add user message
+        addMessage(message, 'user');
+        
+        // Show typing indicator
+        showTypingIndicator();
+        
+        // Disable send button
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Sending...';
+        
+        // Simulate AI response (replace with actual API call)
+        setTimeout(() => {
+            hideTypingIndicator();
+            const response = generateAIResponse(message);
+            addMessage(response, 'ai');
+            
+            // Re-enable send button
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i data-lucide="send" class="me-1"></i>Send';
+            lucide.createIcons();
+        }, 2000);
+        
+        // Store in history
+        chatHistory.push({ type: 'user', message, timestamp: new Date() });
+    }
+
+    function addMessage(message, type) {
+        const chatMessages = document.getElementById('chat-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `d-flex mb-3 ${type === 'user' ? 'justify-content-end' : 'justify-content-start'}`;
+        
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        messageDiv.innerHTML = `
+            <div class="message-bubble ${type === 'user' ? 'bg-primary text-white' : 'bg-light'}" style="max-width: 70%; padding: 12px 16px; border-radius: 18px;">
+                <div class="message-content">
+                    ${type === 'ai' ? '<i data-lucide="bot" class="me-2"></i>' : ''}
+                    ${message}
+                </div>
+                <small class="text-${type === 'user' ? 'white-50' : 'muted'} d-block mt-1" style="font-size: 0.75rem;">
+                    ${timestamp}
+                </small>
+            </div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        lucide.createIcons();
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Hide welcome message if it exists
+        const welcomeMessage = chatMessages.querySelector('.text-center.text-muted');
+        if (welcomeMessage) {
+            welcomeMessage.style.display = 'none';
+        }
+    }
+
+    function showTypingIndicator() {
+        const chatMessages = document.getElementById('chat-messages');
+        const typingDiv = document.createElement('div');
+        typingDiv.id = 'typing-indicator';
+        typingDiv.className = 'd-flex justify-content-start mb-3';
+        typingDiv.innerHTML = `
+            <div class="bg-light" style="padding: 12px 16px; border-radius: 18px;">
+                <div class="typing-dots d-flex align-items-center">
+                    <i data-lucide="bot" class="me-2"></i>
+                    <span>AI is typing</span>
+                    <div class="spinner-grow spinner-grow-sm ms-2" style="width: 0.5rem; height: 0.5rem;"></div>
+                    <div class="spinner-grow spinner-grow-sm ms-1" style="width: 0.5rem; height: 0.5rem; animation-delay: 0.2s;"></div>
+                    <div class="spinner-grow spinner-grow-sm ms-1" style="width: 0.5rem; height: 0.5rem; animation-delay: 0.4s;"></div>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(typingDiv);
+        lucide.createIcons();
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+        const typingIndicator = document.getElementById('typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+
+    function generateAIResponse(userMessage) {
+        // Mock AI responses - replace with actual AI API
+        const responses = {
+            'vlan': `To configure a VLAN, you'll need to:
+
+1. Create the VLAN:
+   \`\`\`
+   vlan 100
+   name Marketing
+   exit
+   \`\`\`
+
+2. Assign ports to the VLAN:
+   \`\`\`
+   interface GigabitEthernet0/1
+   switchport mode access
+   switchport access vlan 100
+   \`\`\`
+
+3. Configure the VLAN interface (if needed):
+   \`\`\`
+   interface vlan 100
+   ip address 192.168.100.1 255.255.255.0
+   no shutdown
+   \`\`\`
+
+Would you like me to explain any of these steps in more detail?`,
+            
+            'connectivity': `For network connectivity troubleshooting, follow these steps:
+
+1. **Physical Layer Check:**
+   - Verify cable connections
+   - Check link lights on switches and devices
+   - Test with known good cables
+
+2. **Basic Connectivity:**
+   \`\`\`
+   ping 8.8.8.8
+   traceroute 8.8.8.8
+   \`\`\`
+
+3. **Interface Status:**
+   \`\`\`
+   show interface status
+   show ip interface brief
+   \`\`\`
+
+4. **Routing Table:**
+   \`\`\`
+   show ip route
+   \`\`\`
+
+What specific connectivity issue are you experiencing?`,
+            
+            'ospf': `Here's a basic OSPF configuration example:
+
+1. **Enable OSPF:**
+   \`\`\`
+   router ospf 1
+   network 192.168.1.0 0.0.0.255 area 0
+   network 10.0.0.0 0.255.255.255 area 0
+   \`\`\`
+
+2. **Configure Router ID:**
+   \`\`\`
+   router-id 1.1.1.1
+   \`\`\`
+
+3. **Interface Configuration:**
+   \`\`\`
+   interface GigabitEthernet0/0
+   ip ospf hello-interval 10
+   ip ospf dead-interval 40
+   \`\`\`
+
+4. **Verification Commands:**
+   \`\`\`
+   show ip ospf neighbor
+   show ip ospf database
+   show ip route ospf
+   \`\`\`
+
+Need help with a specific OSPF scenario?`,
+            
+            'security': `Here are essential network security best practices:
+
+1. **Access Control:**
+   - Use strong passwords and MFA
+   - Implement role-based access control
+   - Regular access reviews
+
+2. **Network Segmentation:**
+   - Use VLANs to separate traffic
+   - Implement firewalls between segments
+   - Apply zero-trust principles
+
+3. **Device Hardening:**
+   \`\`\`
+   no service telnet
+   ip ssh version 2
+   service password-encryption
+   \`\`\`
+
+4. **Monitoring:**
+   - Enable logging
+   - Monitor for unusual traffic patterns
+   - Regular security audits
+
+5. **Updates:**
+   - Keep firmware updated
+   - Apply security patches promptly
+
+Would you like me to elaborate on any of these areas?`
+        };
+        
+        const message = userMessage.toLowerCase();
+        
+        if (message.includes('vlan')) return responses.vlan;
+        if (message.includes('connectivity') || message.includes('troubleshoot')) return responses.connectivity;
+        if (message.includes('ospf')) return responses.ospf;
+        if (message.includes('security')) return responses.security;
+        
+        return `I understand you're asking about: "${userMessage}"
+
+I'm here to help with network automation, configuration, and troubleshooting. Some things I can assist with:
+
+• Network device configuration (Cisco, Juniper, Arista)
+• Routing protocols (OSPF, BGP, EIGRP)
+• Switching and VLANs
+• Network troubleshooting
+• Security best practices
+• Automation scripts
+
+Could you provide more specific details about what you need help with?`;
+    }
+
+    function askQuestion(question) {
+        document.getElementById('chat-input').value = question;
+        sendMessage(question);
+    }
+
+    function insertExample() {
+        const examples = [
+            "How do I configure BGP peering between two routers?",
+            "Show me how to set up port security on a switch",
+            "What's the best way to implement network redundancy?",
+            "Help me troubleshoot OSPF adjacency issues",
+            "How do I configure QoS for VoIP traffic?"
+        ];
+        
+        const randomExample = examples[Math.floor(Math.random() * examples.length)];
+        document.getElementById('chat-input').value = randomExample;
+    }
+
+    function clearChat() {
+        if (confirm('Are you sure you want to clear the chat history?')) {
+            document.getElementById('chat-messages').innerHTML = `
+                <div class="text-center text-muted py-5">
+                    <i data-lucide="message-circle" style="width: 48px; height: 48px;" class="mb-3"></i>
+                    <h6>Welcome to AI Network Assistant</h6>
+                    <p class="mb-0">Ask me anything about network configurations, troubleshooting, or best practices!</p>
+                </div>
+            `;
+            chatHistory = [];
+            lucide.createIcons();
+            showToast('Chat cleared successfully', 'success');
+        }
+    }
+
+    function exportChat() {
+        if (chatHistory.length === 0) {
+            showToast('No chat history to export', 'warning');
+            return;
+        }
+        
+        const chatText = chatHistory.map(item => {
+            const time = item.timestamp.toLocaleString();
+            return `[${time}] ${item.type.toUpperCase()}: ${item.message}`;
+        }).join('\n\n');
+        
+        const blob = new Blob([chatText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chat-export-${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showToast('Chat exported successfully', 'success');
+    }
+
+    function showToast(message, type) {
+        const toastContainer = document.getElementById('toast-container');
+        const toastId = 'toast-' + Date.now();
+        
+        const colorMap = {
+            success: 'text-bg-success',
+            error: 'text-bg-danger',
+            warning: 'text-bg-warning',
+            info: 'text-bg-primary'
+        };
+        
+        const toastHtml = `
+            <div id="${toastId}" class="toast ${colorMap[type]}" role="alert">
+                <div class="toast-header ${colorMap[type]}">
+                    <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">${message}</div>
+            </div>
+        `;
+        
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+        
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement);
+        toast.show();
+        
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    }
+</script>
+{% endblock %}

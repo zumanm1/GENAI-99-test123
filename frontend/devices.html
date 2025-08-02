@@ -146,7 +146,7 @@
             button.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Polling All...';
             button.disabled = true;
 
-            fetch('http://localhost:8002/api/v1/devices/poll', { method: 'POST' })
+            fetch('http://localhost:5000/api/v1/devices/poll', { method: 'POST' })
                 .then(response => response.json())
                 .then(result => {
                     console.log('Poll all result:', result);
@@ -164,7 +164,7 @@
 
         // --- API and Data Handling ---
         function fetchAndDisplayDevices() {
-            fetch('http://localhost:8002/api/v1/devices')
+            fetch('http://localhost:5000/api/v1/devices')
                 .then(response => response.json())
                 .then(devices => {
                     deviceListBody.innerHTML = '';
@@ -201,7 +201,7 @@
             // Edit button logic
             if (target.classList.contains('edit-btn')) {
                 const id = target.dataset.id;
-                fetch(`http://localhost:8002/api/v1/devices/${id}`)
+                fetch(`http://localhost:5000/api/v1/devices/${id}`)
                     .then(response => response.json())
                     .then(device => {
                         deviceIdInput.value = device.id;
@@ -223,7 +223,7 @@
                 const id = target.dataset.id;
                 const deviceName = target.closest('tr').querySelector('td').textContent;
                 if (confirm(`Are you sure you want to delete the device "${deviceName}"?`)) {
-                    fetch(`http://localhost:8002/api/v1/devices/${id}`, { method: 'DELETE' })
+                    fetch(`http://localhost:5000/api/v1/devices/${id}`, { method: 'DELETE' })
                         .then(response => {
                             if (!response.ok) {
                                 return response.json().then(err => { throw new Error(err.detail || 'Failed to delete device') });
@@ -242,7 +242,7 @@
                 const id = target.dataset.id;
                 target.textContent = 'Polling...';
                 target.disabled = true;
-                fetch(`http://localhost:8002/api/v1/devices/${id}/poll`, { method: 'POST' })
+                fetch(`http://localhost:5000/api/v1/devices/${id}/poll`, { method: 'POST' })
                     .then(response => {
                         if (!response.ok) throw new Error('Poll request failed');
                         return response.json();
@@ -262,7 +262,7 @@
                 target.textContent = 'Pinging...';
                 target.disabled = true;
 
-                fetch(`http://localhost:8002/api/v1/devices/${id}/ping`, { method: 'POST' })
+                fetch(`http://localhost:5000/api/v1/devices/${id}/ping`, { method: 'POST' })
                     .then(response => {
                         if (!response.ok) {
                             return response.json().then(err => { throw new Error(err.detail || 'Ping request failed') });
@@ -297,7 +297,7 @@
 
             const deviceId = deviceIdInput.value;
             const isEdit = !!deviceId;
-            const url = isEdit ? `http://localhost:8002/api/v1/devices/${deviceId}` : 'http://localhost:8002/api/v1/devices';
+            const url = isEdit ? `http://localhost:5000/api/v1/devices/${deviceId}` : 'http://localhost:5000/api/v1/devices';
             const method = isEdit ? 'PUT' : 'POST';
 
             // For PUT, remove empty password field if not changed

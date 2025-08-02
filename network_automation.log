@@ -1,0 +1,22 @@
+2025-08-02 00:52:01,111 - INFO - Starting Network Automation Playbook Runner
+2025-08-02 00:52:01,112 - INFO - All inventory files found
+2025-08-02 00:52:01,112 - INFO - Initializing Nornir...
+2025-08-02 00:52:01,149 - ERROR - Error initializing Nornir: plugin 'nornir.plugins.inventory.simple.SimpleInventory' is not registered
+2025-08-02 00:52:32,950 - INFO - Starting Network Automation Playbook Runner
+2025-08-02 00:52:32,950 - INFO - All inventory files found
+2025-08-02 00:52:32,950 - INFO - Initializing Nornir...
+2025-08-02 00:52:33,071 - INFO - Nornir initialized with 3 device(s)
+2025-08-02 00:52:33,072 - INFO - Available devices in inventory:
+2025-08-02 00:52:33,072 - INFO -   - lab-router-1: 192.168.1.10:23 (telnet)
+2025-08-02 00:52:33,073 - INFO -   - lab-switch-1: 192.168.1.20:23 (telnet)
+2025-08-02 00:52:33,073 - INFO -   - lab-router-2: 192.168.1.11:23 (telnet)
+2025-08-02 00:52:33,073 - INFO - Network automation task completed
+2025-08-02 00:52:41,059 - INFO - Starting Network Automation Playbook Runner
+2025-08-02 00:52:41,059 - INFO - All inventory files found
+2025-08-02 00:52:41,060 - INFO - Initializing Nornir...
+2025-08-02 00:52:41,116 - INFO - Nornir initialized with 3 device(s)
+2025-08-02 00:52:41,116 - INFO - Starting interface status collection...
+2025-08-02 00:52:41,116 - INFO - Collecting interface status from 3 device(s)
+2025-08-02 00:52:51,180 - INFO - Interface status collection completed
+2025-08-02 00:52:51,182 - INFO - Task completed: 0 successful, 3 failed
+2025-08-02 00:52:51,183 - INFO - Network automation task completed

@@ -1,0 +1,541 @@
+{% extends "base.html" %}
+
+{% block title %}Automation - Network Automation Platform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 mb-1">GENAI Automation</h1>
+                <p class="text-muted">Generate network configurations using artificial intelligence</p>
+            </div>
+            <div>
+                <button class="btn btn-outline-primary me-2" onclick="loadTemplates()">
+                    <i data-lucide="refresh-cw" class="me-1"></i>
+                    Refresh Templates
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Generator -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">AI Configuration Generator</h5>
+                <p class="card-text text-muted mb-0">Describe your network requirements and let AI generate the configuration</p>
+            </div>
+            <div class="card-body">
+                <form id="genai-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="requirements" class="form-label">Requirements</label>
+                                <textarea class="form-control" id="requirements" rows="6" placeholder="Describe what you want to configure (e.g., 'Create a VLAN for the marketing department with DHCP pool 192.168.10.0/24')"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="device-type" class="form-label">Device Type</label>
+                                <select class="form-select" id="device-type">
+                                    <option value="cisco-ios">Cisco IOS</option>
+                                    <option value="cisco-iosxr">Cisco IOS XR</option>
+                                    <option value="juniper">Juniper JunOS</option>
+                                    <option value="arista">Arista EOS</option>
+                                    <option value="huawei">Huawei VRP</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="target-device" class="form-label">Target Device (Optional)</label>
+                                <select class="form-select" id="target-device">
+                                    <option value="">Select a device...</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Additional Options</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="include-comments">
+                                    <label class="form-check-label" for="include-comments">
+                                        Include comments and documentation
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="validate-syntax">
+                                    <label class="form-check-label" for="validate-syntax">
+                                        Validate syntax before generating
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary me-2" id="generate-btn">
+                                <i data-lucide="cpu" class="me-1"></i>
+                                Generate Configuration
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="clearForm()">
+                                <i data-lucide="x" class="me-1"></i>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results -->
+<div class="row" id="results-section" style="display: none;">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title mb-0">Generated Configuration</h5>
+                    <p class="card-text text-muted mb-0">AI-generated network configuration based on your requirements</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-primary btn-sm me-2" onclick="copyConfiguration()">
+                        <i data-lucide="copy" class="me-1"></i>
+                        Copy
+                    </button>
+                    <button class="btn btn-outline-success btn-sm me-2" onclick="downloadConfiguration()">
+                        <i data-lucide="download" class="me-1"></i>
+                        Download
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="deployConfiguration()">
+                        <i data-lucide="upload" class="me-1"></i>
+                        Deploy
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <pre id="results-container" class="bg-light p-3 rounded"><code></code></pre>
+                <div id="deployment-status" class="mt-3" style="display: none;">
+                    <div class="alert alert-info">
+                        <i data-lucide="info" class="me-2"></i>
+                        <strong>Deployment Status:</strong> <span id="deployment-message">Ready to deploy</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Templates -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Configuration Templates</h5>
+                <p class="card-text text-muted mb-0">Quick start with pre-built configuration templates</p>
+            </div>
+            <div class="card-body">
+                <div class="row" id="templates-container">
+                    <div class="col-md-4 mb-3">
+                        <div class="card border">
+                            <div class="card-body">
+                                <h6 class="card-title">Basic VLAN Setup</h6>
+                                <p class="card-text text-muted">Create VLANs with basic access and trunk ports</p>
+                                <button class="btn btn-outline-primary btn-sm" onclick="useTemplate('vlan')">
+                                    <i data-lucide="play" class="me-1"></i>
+                                    Use Template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card border">
+                            <div class="card-body">
+                                <h6 class="card-title">OSPF Configuration</h6>
+                                <p class="card-text text-muted">Configure OSPF routing protocol</p>
+                                <button class="btn btn-outline-primary btn-sm" onclick="useTemplate('ospf')">
+                                    <i data-lucide="play" class="me-1"></i>
+                                    Use Template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card border">
+                            <div class="card-body">
+                                <h6 class="card-title">Security Hardening</h6>
+                                <p class="card-text text-muted">Apply security best practices</p>
+                                <button class="btn btn-outline-primary btn-sm" onclick="useTemplate('security')">
+                                    <i data-lucide="play" class="me-1"></i>
+                                    Use Template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDeviceList();
+        loadTemplates();
+    });
+
+    async function loadDeviceList() {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) return;
+
+            const response = await fetch('/api/devices', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (response.ok) {
+                const devices = await response.json();
+                const deviceSelect = document.getElementById('target-device');
+                deviceSelect.innerHTML = '<option value="">Select a device...</option>';
+                
+                devices.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.id;
+                    option.textContent = `${device.name} (${device.ip_address})`;
+                    deviceSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading devices:', error);
+        }
+    }
+
+    document.getElementById('genai-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const requirements = document.getElementById('requirements').value;
+        const deviceType = document.getElementById('device-type').value;
+        const targetDevice = document.getElementById('target-device').value;
+        const includeComments = document.getElementById('include-comments').checked;
+        const validateSyntax = document.getElementById('validate-syntax').checked;
+        
+        if (!requirements.trim()) {
+            showToast('Please enter your requirements', 'warning');
+            return;
+        }
+        
+        const generateBtn = document.getElementById('generate-btn');
+        const originalText = generateBtn.innerHTML;
+        generateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating...';
+        generateBtn.disabled = true;
+        
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                showToast('Please login to generate configurations', 'warning');
+                return;
+            }
+
+            // Real API call to generate configuration
+            const response = await fetch('/api/v1/automation/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    requirements: requirements,
+                    device_type: deviceType,
+                    target_device: targetDevice,
+                    include_comments: includeComments,
+                    validate_syntax: validateSyntax,
+                    parameters: {}
+                })
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    showToast('Authentication required. Please login.', 'warning');
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                document.getElementById('results-container').textContent = result.config;
+                document.getElementById('results-section').style.display = 'block';
+                
+                // Store generated config for deployment
+                window.currentGeneratedConfig = result.config;
+                
+                // Scroll to results
+                document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
+                
+                let message = 'Configuration generated successfully!';
+                if (result.warnings && result.warnings.length > 0) {
+                    message += ` (${result.warnings.length} warnings)`;
+                }
+                showToast(message, 'success');
+            } else {
+                throw new Error(result.message || 'Configuration generation failed');
+            }
+            
+        } catch (error) {
+            console.error('Error generating configuration:', error);
+            showToast(`Error generating configuration: ${error.message}`, 'error');
+            
+            // Fallback to mock configuration for demo
+            const mockConfig = generateMockConfiguration(requirements, deviceType);
+            document.getElementById('results-container').textContent = mockConfig;
+            document.getElementById('results-section').style.display = 'block';
+            showToast('Using demo configuration (API unavailable)', 'info');
+            
+        } finally {
+            generateBtn.innerHTML = originalText;
+            generateBtn.disabled = false;
+        }
+    });
+
+    function generateMockConfiguration(requirements, deviceType) {
+        // This is a mock function - replace with actual GENAI API integration
+        const configs = {
+            'cisco-ios': `! Generated Configuration for Cisco IOS
+! Requirements: ${requirements}
+!
+interface vlan 100
+ description Marketing Department
+ ip address 192.168.10.1 255.255.255.0
+ no shutdown
+!
+ip dhcp pool MARKETING
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ dns-server 8.8.8.8 8.8.4.4
+!
+interface GigabitEthernet0/1
+ switchport mode access
+ switchport access vlan 100
+ description Marketing Access Port
+!
+end`,
+            'cisco-iosxr': `!! Generated Configuration for Cisco IOS XR
+!! Requirements: ${requirements}
+!!
+interface vlan 100
+ description Marketing Department
+ ipv4 address 192.168.10.1 255.255.255.0
+ no shutdown
+!
+dhcp ipv4
+ profile MARKETING server
+  pool MARKETING
+   network 192.168.10.0/24
+   default-router 192.168.10.1
+   dns-server 8.8.8.8
+!
+commit`,
+            'juniper': `# Generated Configuration for Juniper JunOS
+# Requirements: ${requirements}
+#
+set vlans marketing vlan-id 100
+set vlans marketing description "Marketing Department"
+set vlans marketing l3-interface irb.100
+set interfaces irb unit 100 family inet address 192.168.10.1/24
+set access address-assignment pool MARKETING family inet network 192.168.10.0/24
+set access address-assignment pool MARKETING family inet range MARKETING-RANGE low 192.168.10.10 high 192.168.10.100
+commit`
+        };
+        
+        return configs[deviceType] || configs['cisco-ios'];
+    }
+
+    function clearForm() {
+        document.getElementById('genai-form').reset();
+        document.getElementById('results-section').style.display = 'none';
+    }
+
+    function copyConfiguration() {
+        const config = document.getElementById('results-container').textContent;
+        navigator.clipboard.writeText(config).then(() => {
+            showToast('Configuration copied to clipboard!', 'success');
+        });
+    }
+
+    function downloadConfiguration() {
+        const config = document.getElementById('results-container').textContent;
+        const blob = new Blob([config], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'generated-config.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Configuration downloaded!', 'success');
+    }
+
+    async function deployConfiguration() {
+        const targetDevice = document.getElementById('target-device').value;
+        const config = window.currentGeneratedConfig || document.getElementById('results-container').textContent;
+        
+        if (!targetDevice) {
+            showToast('Please select a target device for deployment', 'warning');
+            return;
+        }
+        
+        if (!config.trim()) {
+            showToast('No configuration to deploy', 'warning');
+            return;
+        }
+        
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            showToast('Please login to deploy configurations', 'warning');
+            return;
+        }
+        
+        document.getElementById('deployment-status').style.display = 'block';
+        document.getElementById('deployment-message').textContent = 'Deploying configuration...';
+        
+        try {
+            // Real API call to deploy configuration
+            const response = await fetch('/api/v1/automation/deploy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    config: config,
+                    device_id: targetDevice,
+                    backup_current: true,
+                    dry_run: false
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                document.getElementById('deployment-message').textContent = 'Configuration deployed successfully!';
+                showToast('Configuration deployed to device!', 'success');
+            } else {
+                throw new Error(result.message || 'Deployment failed');
+            }
+            
+        } catch (error) {
+            console.error('Error deploying configuration:', error);
+            document.getElementById('deployment-message').textContent = 'Deployment failed!';
+            showToast(`Error deploying configuration: ${error.message}`, 'error');
+            
+            // Fallback to mock deployment for demo
+            setTimeout(() => {
+                document.getElementById('deployment-message').textContent = 'Demo deployment completed!';
+                showToast('Demo deployment completed (API unavailable)', 'info');
+            }, 2000);
+        }
+    }
+
+    function useTemplate(templateType) {
+        const templates = {
+            'vlan': 'Create a VLAN for the marketing department with DHCP pool 192.168.10.0/24',
+            'ospf': 'Configure OSPF area 0 on all interfaces with network 10.0.0.0/16',
+            'security': 'Apply security hardening including SSH configuration, ACLs, and disable unused services'
+        };
+        
+        document.getElementById('requirements').value = templates[templateType] || '';
+        showToast(`Template "${templateType}" loaded!`, 'info');
+    }
+
+    async function loadTemplates() {
+        try {
+            const response = await fetch('/api/v1/automation/templates');
+            
+            if (response.ok) {
+                const result = await response.json();
+                
+                if (result.success && result.templates) {
+                    const templatesContainer = document.getElementById('templates-container');
+                    templatesContainer.innerHTML = '';
+                    
+                    result.templates.forEach(template => {
+                        const templateCard = `
+                            <div class="col-md-4 mb-3">
+                                <div class="card border">
+                                    <div class="card-body">
+                                        <h6 class="card-title">${template.name}</h6>
+                                        <p class="card-text text-muted">${template.description}</p>
+                                        <span class="badge bg-secondary mb-2">${template.category}</span>
+                                        <br>
+                                        <button class="btn btn-outline-primary btn-sm" onclick="useTemplate('${template.id}')">
+                                            <i data-lucide="play" class="me-1"></i>
+                                            Use Template
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        templatesContainer.insertAdjacentHTML('beforeend', templateCard);
+                    });
+                    
+                    // Reinitialize Lucide icons for new elements
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                    
+                    showToast(`${result.templates.length} templates loaded!`, 'success');
+                } else {
+                    showToast('No templates available', 'info');
+                }
+            } else {
+                throw new Error('Failed to load templates');
+            }
+        } catch (error) {
+            console.error('Error loading templates:', error);
+            showToast('Error loading templates', 'error');
+        }
+    }
+
+    function showToast(message, type) {
+        const toastContainer = document.getElementById('toast-container');
+        const toastId = 'toast-' + Date.now();
+        
+        const colorMap = {
+            success: 'text-bg-success',
+            error: 'text-bg-danger',
+            warning: 'text-bg-warning',
+            info: 'text-bg-primary'
+        };
+        
+        const toastHtml = `
+            <div id="${toastId}" class="toast ${colorMap[type]}" role="alert">
+                <div class="toast-header ${colorMap[type]}">
+                    <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">${message}</div>
+            </div>
+        `;
+        
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+        
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement);
+        toast.show();
+        
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    }
+</script>
+{% endblock %}

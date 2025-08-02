@@ -4,7 +4,7 @@ import psutil
 import time
 from datetime import datetime, timedelta
 
-from ..database.models import Device, Configuration
+from ..database.models import NetworkDevice, Configuration
 from ..utils.logger import log_db_operation
 from ..utils.exceptions import DatabaseException
 from .schemas import (
@@ -18,10 +18,10 @@ def get_device_summary(db: Session) -> DeviceSummary:
     Get device summary information
     """
     try:
-        total_devices = db.query(Device).count()
-        online_devices = db.query(Device).filter(Device.status == "online").count()
-        offline_devices = db.query(Device).filter(Device.status == "offline").count()
-        error_devices = db.query(Device).filter(Device.status == "error").count()
+        total_devices = db.query(NetworkDevice).count()
+        online_devices = db.query(NetworkDevice).filter(NetworkDevice.status == "online").count()
+        offline_devices = db.query(NetworkDevice).filter(NetworkDevice.status == "offline").count()
+        error_devices = db.query(NetworkDevice).filter(NetworkDevice.status == "error").count()
         
         log_db_operation("SELECT", "devices", "summary")
         

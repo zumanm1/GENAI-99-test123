@@ -1,212 +1,225 @@
+from backend.database.models import NetworkDevice, OperationLog
+from backend.ai.ai_service import ai_service
 from sqlalchemy.orm import Session
-from typing import List, Optional
-import subprocess
-import time
+import paramiko
 import socket
-from ..database.models import Device
-from ..utils.logger import log_db_operation, log_network_activity
-from ..utils.exceptions import DeviceNotFoundException, DeviceConnectionException
-from .schemas import DeviceCreate, DeviceUpdate, DevicePingResult, DevicePollResult
-from ..utils.config import config
-import hashlib
+import json
+from datetime import datetime, timezone
+import logging
 
-def get_device(db: Session, device_id: int) -> Device:
-    """
-    Get a device by ID
-    """
-    log_db_operation("SELECT", "devices", device_id)
-    device = db.query(Device).filter(Device.id == device_id).first()
-    if not device:
-        raise DeviceNotFoundException(f"Device with ID {device_id} not found")
-    return device
+logger = logging.getLogger(__name__)
 
-def get_device_by_ip(db: Session, ip_address: str) -> Device:
-    """
-    Get a device by IP address
-    """
-    log_db_operation("SELECT", "devices", f"ip:{ip_address}")
-    device = db.query(Device).filter(Device.ip_address == ip_address).first()
-    if not device:
-        raise DeviceNotFoundException(f"Device with IP {ip_address} not found")
-    return device
+class DeviceService:
+    """Service class for device operations"""
+    def __init__(self, db: Session):
+        self.db = db
 
-def get_devices(db: Session, skip: int = 0, limit: int = 100) -> List[Device]:
-    """
-    Get all devices with pagination
-    """
-    log_db_operation("SELECT", "devices", "all")
-    return db.query(Device).offset(skip).limit(limit).all()
+    def get_all_devices(self):
+        """Get all devices"""
+        return self.db.query(NetworkDevice).order_by(NetworkDevice.name).all()
 
-def create_device(db: Session, device: DeviceCreate) -> Device:
-    """
-    Create a new device
-    """
-    # Hash the password
-    hashed_password = hashlib.sha256(device.password.encode()).hexdigest()
-    
-    # Create device object
-    db_device = Device(
-        name=device.name,
-        ip_address=device.ip_address,
-        device_type=device.device_type,
-        username=device.username,
-        hashed_password=hashed_password,
-        port=device.port,
-        protocol=device.protocol
-    )
-    
-    # Add to database
-    db.add(db_device)
-    db.commit()
-    db.refresh(db_device)
-    
-    log_db_operation("INSERT", "devices", db_device.id)
-    
-    return db_device
+    def get_device_by_id(self, device_id: str):
+        """Get device by ID"""
+        return self.db.query(NetworkDevice).get(device_id)
 
-def update_device(db: Session, device_id: int, device: DeviceUpdate) -> Device:
-    """
-    Update a device
-    """
-    db_device = get_device(db, device_id)
-    
-    # Update fields if provided
-    if device.name is not None:
-        db_device.name = device.name
-    if device.ip_address is not None:
-        db_device.ip_address = device.ip_address
-    if device.device_type is not None:
-        db_device.device_type = device.device_type
-    if device.username is not None:
-        db_device.username = device.username
-    if device.password is not None:
-        # Hash the new password
-        db_device.hashed_password = hashlib.sha256(device.password.encode()).hexdigest()
-    if device.port is not None:
-        db_device.port = device.port
-    if device.protocol is not None:
-        db_device.protocol = device.protocol
-    
-    # Commit changes
-    db.commit()
-    db.refresh(db_device)
-    
-    log_db_operation("UPDATE", "devices", device_id)
-    
-    return db_device
-
-def delete_device(db: Session, device_id: int) -> bool:
-    """
-    Delete a device
-    """
-    db_device = get_device(db, device_id)
-    
-    # Delete from database
-    db.delete(db_device)
-    db.commit()
-    
-    log_db_operation("DELETE", "devices", device_id)
-    
-    return True
-
-def ping_device(ip_address: str, timeout: int = 2) -> DevicePingResult:
-    """
-    Ping a device to check connectivity using ICMP.
-    """
-    try:
-        start_time = time.time()
-        # The command uses -c 1 for a single packet and -W for timeout in seconds.
-        command = ['ping', '-c', '1', '-W', str(timeout), ip_address]
-        result = subprocess.run(command, capture_output=True, text=True, check=False)
-        response_time = (time.time() - start_time) * 1000  # in milliseconds
-
-        if result.returncode == 0:
-            log_network_activity("ping", ip_address, "success")
-            return DevicePingResult(
-                ip_address=ip_address,
-                reachable=True,
-                response_time=response_time,
-                message="Device is reachable via ICMP."
+    def create_device(self, device_data: dict):
+        """Create new device"""
+        try:
+            device = NetworkDevice(
+                name=device_data['name'],
+                ip_address=device_data['ip_address'],
+                model=device_data['model'],
+                status='unknown',
+                device_metadata=device_data.get('metadata', {})
             )
-        else:
-            log_network_activity("ping", ip_address, "failure")
-            return DevicePingResult(
-                ip_address=ip_address,
-                reachable=False,
-                response_time=None,
-                message=f"Device not reachable. Reason: {result.stderr or result.stdout}"
+            
+            self.db.add(device)
+            self.db.commit()
+            self.db.refresh(device)
+            
+            # Test initial connectivity
+            self.test_connectivity(device.id, save_result=True)
+            
+            return device
+        except Exception as e:
+            logger.error(f"Error creating device: {e}")
+            self.db.rollback()
+            raise
+
+    def update_device(self, device_id: str, device_data: dict):
+        """Update device information"""
+        try:
+            device = self.get_device_by_id(device_id)
+            if not device:
+                raise ValueError("Device not found")
+            
+            device.name = device_data.get('name', device.name)
+            device.ip_address = device_data.get('ip_address', device.ip_address)
+            device.model = device_data.get('model', device.model)
+            device.device_metadata = device_data.get('metadata', device.device_metadata)
+            device.updated_at = datetime.now(timezone.utc)
+            
+            self.db.commit()
+            self.db.refresh(device)
+            return device
+        except Exception as e:
+            logger.error(f"Error updating device: {e}")
+            self.db.rollback()
+            raise
+
+    def delete_device(self, device_id: str):
+        """Delete device"""
+        try:
+            device = self.get_device_by_id(device_id)
+            if not device:
+                raise ValueError("Device not found")
+            
+            self.db.delete(device)
+            self.db.commit()
+        except Exception as e:
+            logger.error(f"Error deleting device: {e}")
+            self.db.rollback()
+            raise
+
+    def test_connectivity(self, device_id: str, save_result: bool = False):
+        """Test device connectivity"""
+        device = self.get_device_by_id(device_id)
+        if not device:
+            raise ValueError("Device not found")
+        
+        start_time = datetime.now(timezone.utc)
+        result = {
+            'device_id': device_id,
+            'device_name': device.name,
+            'ip_address': device.ip_address,
+            'status': 'unknown',
+            'response_time_ms': 0,
+            'error': None
+        }
+        
+        try:
+            # Test basic connectivity with ping
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(5)
+            
+            start_ping = datetime.now(timezone.utc)
+            connection_result = sock.connect_ex((device.ip_address, 22))  # SSH port
+            end_ping = datetime.now(timezone.utc)
+            
+            response_time = (end_ping - start_ping).total_seconds() * 1000
+            result['response_time_ms'] = round(response_time, 2)
+            
+            if connection_result == 0:
+                result['status'] = 'online'
+                device.update_status('online')
+            else:
+                result['status'] = 'offline'
+                device.update_status('offline')
+                result['error'] = 'Connection refused'
+            
+            sock.close()
+            
+        except socket.timeout:
+            result['status'] = 'offline'
+            result['error'] = 'Connection timeout'
+            device.update_status('offline')
+            
+        except Exception as e:
+            result['status'] = 'offline'
+            result['error'] = str(e)
+            device.update_status('offline')
+        
+        # Save operation log if requested
+        if save_result:
+            try:
+                operation = OperationLog(
+                    device_id=device_id,
+                    operation_type='connectivity_test',
+                    status='success' if result['status'] == 'online' else 'failed',
+                    result=json.dumps(result),
+                    execution_time_ms=int(result['response_time_ms'])
+                )
+                self.db.add(operation)
+                self.db.commit()
+            except Exception as e:
+                logger.error(f"Error saving operation log: {e}")
+                self.db.rollback()
+                raise
+        
+        self.db.commit()
+        logger.info(f"Connectivity test result for {device_id}: {result['status']}")
+        return result
+
+    def backup_configuration(self, device_id: str):
+        """Backup device configuration via SSH"""
+        device = self.get_device_by_id(device_id)
+        if not device:
+            raise ValueError("Device not found")
+        
+        start_time = datetime.now(timezone.utc)
+        result = {
+            'device_id': device_id,
+            'device_name': device.name,
+            'status': 'failed',
+            'config_size': 0,
+            'error': None
+        }
+        
+        try:
+            # SSH connection to device
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            
+            # Note: In production, use proper credential management
+            ssh.connect(
+                device.ip_address,
+                username='admin',  # Configure properly
+                password='admin',  # Use secure credential storage
+                timeout=30
             )
-    except FileNotFoundError:
-        log_network_activity("ping", ip_address, "error")
-        return DevicePingResult(
-            ip_address=ip_address,
-            reachable=False,
-            message="Ping command not found. Please ensure ICMP is supported."
-        )
-    except Exception as e:
-        log_network_activity("ping", ip_address, "error")
-        return DevicePingResult(
-            ip_address=ip_address,
-            reachable=False,
-            message=f"An unexpected error occurred during ping: {str(e)}"
-        )
+            
+            # Execute show running-config command
+            stdin, stdout, stderr = ssh.exec_command('show running-config')
+            config_output = stdout.read().decode('utf-8')
+            error_output = stderr.read().decode('utf-8')
+            
+            if error_output:
+                raise Exception(f"Command error: {error_output}")
+            
+            # Save configuration backup
+            device.config_backup = config_output
+            device.updated_at = datetime.now(timezone.utc)
+            
+            result['status'] = 'success'
+            result['config_size'] = len(config_output)
+            
+            ssh.close()
+            
+        except Exception as e:
+            result['error'] = str(e)
+            logger.error(f"Backup configuration error: {e}")
+        
+        # Save operation log
+        try:
+            end_time = datetime.now(timezone.utc)
+            execution_time = (end_time - start_time).total_seconds() * 1000
+            operation = OperationLog(
+                device_id=device_id,
+                operation_type='config_backup',
+                status=result['status'],
+                command='show running-config',
+                result=json.dumps(result),
+                error_message=result.get('error'),
+                execution_time_ms=int(execution_time)
+            )
+            self.db.add(operation)
+            self.db.commit()
+        except Exception as e:
+            logger.error(f"Error saving operation log: {e}")
+            self.db.rollback()
+            raise
+        
+        self.db.commit()
+        return result
 
-def poll_device(db: Session, device_id: int) -> DevicePollResult:
-    """
-    Poll a device to check its status
-    """
-    try:
-        # Get device from database
-        device = get_device(db, device_id)
-        
-        # Ping the device
-        ping_result = ping_device(device.ip_address)
-        
-        # Update device status
-        if ping_result.reachable:
-            device.status = "online"
-            message = "Device is online"
-        else:
-            device.status = "offline"
-            message = "Device is offline"
-        
-        device.last_polled = time.time()
-        db.commit()
-        
-        log_network_activity("poll", device.ip_address, device.status, device_id)
-        
-        return DevicePollResult(
-            device_id=device_id,
-            status=device.status,
-            message=message,
-            timestamp=device.last_polled
-        )
-    except Exception as e:
-        log_network_activity("poll", str(device_id), "error", device_id)
-        return DevicePollResult(
-            device_id=device_id,
-            status="error",
-            message=f"Polling failed: {str(e)}",
-            timestamp=time.time()
-        )
-
-def ping_device_for_endpoint(db: Session, device_id: int) -> DevicePingResult:
-    """
-    Pings a specific device by its ID and returns the result.
-    This is intended to be called from an API endpoint.
-    """
-    device = get_device(db, device_id)
-    return ping_device(device.ip_address)
-
-def poll_all_devices(db: Session) -> List[DevicePollResult]:
-    """
-    Poll all devices to check their status
-    """
-    devices = get_devices(db)
-    results = []
-    
-    for device in devices:
-        result = poll_device(db, device.id)
-        results.append(result)
-    
-    return results
+# Legacy functions removed to prevent conflicts with main DeviceService class

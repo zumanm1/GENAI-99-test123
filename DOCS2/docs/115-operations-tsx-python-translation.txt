@@ -1,0 +1,1217 @@
+# Python/Flask Translation: Operations.tsx
+
+## Current React Implementation Analysis
+The Operations.tsx component provides AI-powered network monitoring, auditing, troubleshooting, and baseline analysis with complex state management, real-time operations, and multi-tab functionality.
+
+## Python/Flask Equivalent Implementation
+
+### Flask Blueprint (blueprints/operations.py)
+```python
+from flask import Blueprint, render_template, request, jsonify, session, flash
+from flask_login import login_required, current_user
+from flask_wtf import FlaskForm
+from wtforms import SelectField, TextAreaField, SubmitField, StringField
+from wtforms.validators import DataRequired
+from datetime import datetime, timedelta
+import json
+import uuid
+from models.network_device import NetworkDevice
+from models.network_operation import NetworkOperation
+from models.audit_result import AuditResult
+from models.baseline_analysis import BaselineAnalysis
+from services.operations_service import OperationsService
+from services.ai_service import AIService
+
+operations_bp = Blueprint('operations', __name__)
+
+class AuditForm(FlaskForm):
+    """Form for network audit configuration"""
+    audit_scope = SelectField('Audit Scope', 
+                             choices=[
+                                 ('all', 'All Devices (R15-R25)'),
+                                 ('core', 'Core Routers Only'),
+                                 ('edge', 'Edge Routers Only'),
+                                 ('branch', 'Branch Routers Only')
+                             ],
+                             default='all')
+    audit_type = SelectField('Audit Type',
+                           choices=[
+                               ('comprehensive', 'Comprehensive Audit'),
+                               ('security', 'Security Only'),
+                               ('compliance', 'Compliance Check'),
+                               ('performance', 'Performance Analysis')
+                           ],
+                           default='comprehensive')
+    submit = SubmitField('Start Audit')
+
+class TroubleshootForm(FlaskForm):
+    """Form for AI troubleshooting"""
+    problem_domain = SelectField('Problem Domain',
+                               choices=[
+                                   ('connectivity', 'Connectivity Issues'),
+                                   ('performance', 'Performance Problems'),
+                                   ('routing', 'Routing Anomalies'),
+                                   ('security', 'Security Incidents')
+                               ],
+                               default='connectivity')
+    target_device = SelectField('Target Device',
+                              choices=[
+                                  ('auto', 'Auto-detect'),
+                                  ('r17', 'R17-EDGE-02 (Warning)'),
+                                  ('r18', 'R18-BRANCH-01 (Offline)'),
+                                  ('all', 'All Devices')
+                              ],
+                              default='auto')
+    submit = SubmitField('Start AI Diagnosis')
+
+class BaselineForm(FlaskForm):
+    """Form for baseline analysis"""
+    baseline_period = SelectField('Baseline Period',
+                                choices=[
+                                    ('7d', 'Last 7 days'),
+                                    ('30d', 'Last 30 days'),
+                                    ('90d', 'Last 90 days'),
+                                    ('custom', 'Custom Range')
+                                ],
+                                default='30d')
+    comparison_type = SelectField('Comparison Type',
+                                choices=[
+                                    ('config', 'Configuration Drift'),
+                                    ('performance', 'Performance Baseline'),
+                                    ('security', 'Security Posture'),
+                                    ('topology', 'Network Topology')
+                                ],
+                                default='config')
+    submit = SubmitField('Analyze Baseline')
+
+@operations_bp.route('/')
+@login_required
+def operations_home():
+    """Main operations page (equivalent to Operations component)"""
+    
+    # Get operation statistics (equivalent to React dashboard stats)
+    operation_stats = get_operation_statistics()
+    
+    # Initialize forms
+    audit_form = AuditForm()
+    troubleshoot_form = TroubleshootForm()
+    baseline_form = BaselineForm()
+    
+    # Get recent operations and results
+    recent_audits = get_recent_audit_results()
+    recent_troubleshooting = get_recent_troubleshooting_results()
+    baseline_results = get_recent_baseline_analysis()
+    
+    # Get active tab from URL parameter
+    active_tab = request.args.get('tab', 'audit')
+    
+    context = {
+        'page_title': 'GENAI Network Operations',
+        'page_description': 'AI-powered network audit, troubleshooting, and baseline analysis',
+        'operation_stats': operation_stats,
+        'audit_form': audit_form,
+        'troubleshoot_form': troubleshoot_form,
+        'baseline_form': baseline_form,
+        'recent_audits': recent_audits,
+        'recent_troubleshooting': recent_troubleshooting,
+        'baseline_results': baseline_results,
+        'active_tab': active_tab
+    }
+    
+    return render_template('operations/index.html', **context)
+
+@operations_bp.route('/run-audit', methods=['POST'])
+@login_required
+def run_audit():
+    """Run network audit (equivalent to React runAudit)"""
+    form = AuditForm()
+    
+    if form.validate_on_submit():
+        try:
+            # Create audit operation record
+            operation = NetworkOperation(
+                operation_type='audit',
+                description=f'{form.audit_type.data.title()} audit on {form.audit_scope.data} devices',
+                status='running',
+                user_id=current_user.id
+            )
+            operation.save()
+            
+            # Start audit process (equivalent to React async operation)
+            operations_service = OperationsService()
+            audit_task_id = operations_service.start_audit({
+                'scope': form.audit_scope.data,
+                'type': form.audit_type.data,
+                'operation_id': operation.id,
+                'user_id': current_user.id
+            })
+            
+            # Store task ID in session for progress tracking
+            session['current_audit_task'] = audit_task_id
+            
+            flash('Network audit started successfully', 'success')
+            return jsonify({
+                'status': 'success',
+                'message': 'Audit started',
+                'task_id': audit_task_id,
+                'operation_id': operation.id
+            })
+            
+        except Exception as e:
+            flash(f'Failed to start audit: {str(e)}', 'error')
+            return jsonify({'status': 'error', 'message': str(e)})
+    
+    return jsonify({'status': 'error', 'message': 'Invalid form data'})
+
+@operations_bp.route('/run-troubleshoot', methods=['POST'])
+@login_required
+def run_troubleshoot():
+    """Run AI troubleshooting (equivalent to React runTroubleshoot)"""
+    form = TroubleshootForm()
+    
+    if form.validate_on_submit():
+        try:
+            # Create troubleshooting operation
+            operation = NetworkOperation(
+                operation_type='troubleshoot',
+                description=f'AI troubleshooting for {form.problem_domain.data} on {form.target_device.data}',
+                status='running',
+                user_id=current_user.id
+            )
+            operation.save()
+            
+            # Start AI troubleshooting
+            ai_service = AIService()
+            troubleshoot_request = {
+                'problem_domain': form.problem_domain.data,
+                'target_device': form.target_device.data,
+                'operation_id': operation.id,
+                'user_id': current_user.id
+            }
+            
+            result = ai_service.perform_troubleshooting(troubleshoot_request)
+            
+            # Update operation with results
+            operation.status = 'completed'
+            operation.result = json.dumps(result)
+            operation.completed_at = datetime.utcnow()
+            operation.save()
+            
+            # Store results in session for display
+            session['latest_troubleshoot_result'] = result
+            
+            flash('AI troubleshooting completed', 'success')
+            return jsonify({
+                'status': 'success',
+                'message': 'Troubleshooting completed',
+                'result': result
+            })
+            
+        except Exception as e:
+            operation.status = 'failed'
+            operation.result = str(e)
+            operation.save()
+            
+            flash(f'Troubleshooting failed: {str(e)}', 'error')
+            return jsonify({'status': 'error', 'message': str(e)})
+    
+    return jsonify({'status': 'error', 'message': 'Invalid form data'})
+
+@operations_bp.route('/run-baseline', methods=['POST'])
+@login_required
+def run_baseline_analysis():
+    """Run baseline analysis (equivalent to React baseline functionality)"""
+    form = BaselineForm()
+    
+    if form.validate_on_submit():
+        try:
+            # Create baseline analysis operation
+            operation = NetworkOperation(
+                operation_type='baseline_analysis',
+                description=f'Baseline analysis: {form.comparison_type.data} over {form.baseline_period.data}',
+                status='running',
+                user_id=current_user.id
+            )
+            operation.save()
+            
+            # Run baseline analysis
+            operations_service = OperationsService()
+            analysis_result = operations_service.run_baseline_analysis({
+                'period': form.baseline_period.data,
+                'comparison_type': form.comparison_type.data,
+                'operation_id': operation.id
+            })
+            
+            # Save baseline analysis results
+            baseline_analysis = BaselineAnalysis(
+                operation_id=operation.id,
+                analysis_type=form.comparison_type.data,
+                period=form.baseline_period.data,
+                results=analysis_result,
+                user_id=current_user.id
+            )
+            baseline_analysis.save()
+            
+            # Update operation status
+            operation.status = 'completed'
+            operation.result = json.dumps(analysis_result)
+            operation.completed_at = datetime.utcnow()
+            operation.save()
+            
+            flash('Baseline analysis completed', 'success')
+            return jsonify({
+                'status': 'success',
+                'message': 'Baseline analysis completed',
+                'result': analysis_result
+            })
+            
+        except Exception as e:
+            operation.status = 'failed'
+            operation.result = str(e)
+            operation.save()
+            
+            flash(f'Baseline analysis failed: {str(e)}', 'error')
+            return jsonify({'status': 'error', 'message': str(e)})
+    
+    return jsonify({'status': 'error', 'message': 'Invalid form data'})
+
+@operations_bp.route('/api/audit-progress/<operation_id>')
+@login_required
+def get_audit_progress(operation_id):
+    """Get audit progress (equivalent to React progress tracking)"""
+    try:
+        operation = NetworkOperation.query.get(operation_id)
+        if not operation:
+            return jsonify({'status': 'error', 'message': 'Operation not found'})
+        
+        # Get progress from operations service
+        operations_service = OperationsService()
+        progress = operations_service.get_audit_progress(operation_id)
+        
+        return jsonify({
+            'status': 'success',
+            'progress': progress,
+            'operation_status': operation.status,
+            'current_device': progress.get('current_device', ''),
+            'percentage': progress.get('percentage', 0)
+        })
+        
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@operations_bp.route('/api/operation-status/<operation_id>')
+@login_required
+def get_operation_status(operation_id):
+    """Get operation status (equivalent to React status polling)"""
+    try:
+        operation = NetworkOperation.query.get(operation_id)
+        if not operation:
+            return jsonify({'status': 'error', 'message': 'Operation not found'})
+        
+        result_data = None
+        if operation.result:
+            try:
+                result_data = json.loads(operation.result)
+            except:
+                result_data = operation.result
+        
+        return jsonify({
+            'status': 'success',
+            'operation_status': operation.status,
+            'description': operation.description,
+            'result': result_data,
+            'created_at': operation.created_at.isoformat(),
+            'completed_at': operation.completed_at.isoformat() if operation.completed_at else None
+        })
+        
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
+# Helper functions
+def get_operation_statistics():
+    """Get operation statistics (equivalent to React stats calculation)"""
+    # Calculate audit score from recent audits
+    recent_audits = AuditResult.query.filter(
+        AuditResult.created_at >= datetime.utcnow() - timedelta(days=7)
+    ).all()
+    
+    audit_score = 87  # This would be calculated from actual audit results
+    
+    # Count open issues
+    open_issues = AuditResult.query.filter(
+        AuditResult.severity.in_(['critical', 'medium']),
+        AuditResult.status == 'open'
+    ).count()
+    
+    # Count devices with baseline drift
+    baseline_drift = BaselineAnalysis.query.filter(
+        BaselineAnalysis.created_at >= datetime.utcnow() - timedelta(days=1),
+        BaselineAnalysis.drift_detected == True
+    ).count()
+    
+    # Count auto-fixed issues this month
+    auto_fixed = NetworkOperation.query.filter(
+        NetworkOperation.operation_type == 'auto_fix',
+        NetworkOperation.status == 'completed',
+        NetworkOperation.created_at >= datetime.utcnow() - timedelta(days=30)
+    ).count()
+    
+    return {
+        'audit_score': audit_score,
+        'open_issues': open_issues,
+        'baseline_drift': baseline_drift,
+        'auto_fixed': auto_fixed
+    }
+
+def get_recent_audit_results():
+    """Get recent audit results (equivalent to React audit results)"""
+    results = AuditResult.query.order_by(
+        AuditResult.created_at.desc()
+    ).limit(3).all()
+    
+    audit_items = []
+    for result in results:
+        audit_items.append({
+            'title': result.title,
+            'description': result.description,
+            'severity': result.severity,
+            'status': result.status,
+            'device_name': result.device.name if result.device else 'System',
+            'icon_class': get_severity_icon_class(result.severity),
+            'badge_class': get_severity_badge_class(result.severity)
+        })
+    
+    return audit_items
+
+def get_recent_troubleshooting_results():
+    """Get recent troubleshooting results"""
+    # Get latest troubleshooting result from session or database
+    session_result = session.get('latest_troubleshoot_result')
+    if session_result:
+        return session_result
+    
+    # Fallback to mock data or database query
+    return {
+        'problem_detected': {
+            'title': 'Problem Detected',
+            'description': 'R18-BRANCH-01: Interface GigabitEthernet0/0 is down',
+            'confidence': 95
+        },
+        'root_cause': {
+            'title': 'Root Cause Analysis',
+            'description': 'Physical layer issue or configuration error detected',
+            'causes': [
+                {'description': 'Cable connection issue', 'probability': 60},
+                {'description': 'Interface administratively down', 'probability': 30},
+                {'description': 'Hardware failure', 'probability': 10}
+            ]
+        },
+        'recommendations': [
+            'Check interface status',
+            'Verify cable connectivity',
+            'Enable interface if down'
+        ]
+    }
+
+def get_recent_baseline_analysis():
+    """Get recent baseline analysis results"""
+    analysis = BaselineAnalysis.query.order_by(
+        BaselineAnalysis.created_at.desc()
+    ).first()
+    
+    if analysis and analysis.results:
+        return analysis.results
+    
+    # Fallback to mock data
+    return {
+        'devices_analyzed': 8,
+        'changes_detected': 4,
+        'drift_percentage': 15.2,
+        'last_analysis': datetime.utcnow() - timedelta(hours=2)
+    }
+
+def get_severity_icon_class(severity):
+    """Get icon class for severity level"""
+    icon_map = {
+        'critical': 'fas fa-exclamation-triangle text-danger',
+        'medium': 'fas fa-exclamation-triangle text-warning',
+        'low': 'fas fa-info-circle text-info',
+        'passed': 'fas fa-check-circle text-success'
+    }
+    return icon_map.get(severity, 'fas fa-info-circle')
+
+def get_severity_badge_class(severity):
+    """Get badge class for severity level"""
+    badge_map = {
+        'critical': 'badge-danger',
+        'medium': 'badge-warning',
+        'low': 'badge-info',
+        'passed': 'badge-success'
+    }
+    return badge_map.get(severity, 'badge-secondary')
+```
+
+### Jinja2 Template (templates/operations/index.html)
+```html
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - Network Automation{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-6 fw-bold">{{ page_title }}</h1>
+            <p class="text-muted">{{ page_description }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-outline-primary me-2">
+                <i class="fas fa-file-alt"></i> Reports
+            </button>
+            <button class="btn btn-primary">
+                <i class="fas fa-chart-line"></i> Live Monitor
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Statistics (equivalent to React status cards) -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Audit Score</h6>
+                            <h2 class="text-success mb-0">{{ operation_stats.audit_score }}%</h2>
+                            <small class="text-muted">+5% from last week</small>
+                        </div>
+                        <i class="fas fa-shield-alt fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Open Issues</h6>
+                            <h2 class="text-warning mb-0">{{ operation_stats.open_issues }}</h2>
+                            <small class="text-muted">3 critical, 9 medium</small>
+                        </div>
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Baseline Drift</h6>
+                            <h2 class="text-primary mb-0">{{ operation_stats.baseline_drift }}</h2>
+                            <small class="text-muted">devices changed</small>
+                        </div>
+                        <i class="fas fa-chart-line fa-2x text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Auto-Fixed</h6>
+                            <h2 class="text-success mb-0">{{ operation_stats.auto_fixed }}</h2>
+                            <small class="text-muted">issues this month</small>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Operations Tabs -->
+    <ul class="nav nav-tabs mb-4" id="operationsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'audit' %}active{% endif %}" 
+                    id="audit-tab" data-bs-toggle="tab" data-bs-target="#audit" type="button">
+                Network Audit
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'troubleshoot' %}active{% endif %}" 
+                    id="troubleshoot-tab" data-bs-toggle="tab" data-bs-target="#troubleshoot" type="button">
+                AI Troubleshooting
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'baseline' %}active{% endif %}" 
+                    id="baseline-tab" data-bs-toggle="tab" data-bs-target="#baseline" type="button">
+                Baseline Analysis
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'backend' %}active{% endif %}" 
+                    id="backend-tab" data-bs-toggle="tab" data-bs-target="#backend" type="button">
+                Config Backend
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="operationsTabsContent">
+        <!-- Audit Tab -->
+        <div class="tab-pane fade {% if active_tab == 'audit' %}show active{% endif %}" id="audit" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-shield-alt me-2"></i>
+                                Network Security Audit
+                            </h5>
+                            <small class="text-muted">Comprehensive AI-powered network security and compliance audit</small>
+                        </div>
+                        <div class="card-body">
+                            <form id="auditForm">
+                                {{ audit_form.hidden_tag() }}
+                                
+                                <div class="mb-3">
+                                    {{ audit_form.audit_scope.label(class="form-label") }}
+                                    {{ audit_form.audit_scope(class="form-select") }}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ audit_form.audit_type.label(class="form-label") }}
+                                    {{ audit_form.audit_type(class="form-select") }}
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary w-100" id="auditBtn">
+                                    <i class="fas fa-play me-2"></i>
+                                    Start Audit
+                                </button>
+                            </form>
+                            
+                            <!-- Audit Progress (equivalent to React progress state) -->
+                            <div id="auditProgress" class="mt-3" style="display: none;">
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                         id="auditProgressBar" style="width: 0%"></div>
+                                </div>
+                                <p class="text-muted small mt-2" id="auditProgressText">Starting audit...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Latest Audit Results</h5>
+                            <small class="text-muted">Last run: 2 hours ago</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="audit-results">
+                                {% for result in recent_audits %}
+                                <div class="d-flex justify-content-between align-items-center p-3 border rounded mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="{{ result.icon_class }} me-3"></i>
+                                        <div>
+                                            <p class="mb-1 fw-medium">{{ result.title }}</p>
+                                            <p class="text-muted small mb-0">{{ result.description }}</p>
+                                        </div>
+                                    </div>
+                                    <span class="badge {{ result.badge_class }}">{{ result.severity.title() }}</span>
+                                </div>
+                                {% else %}
+                                <p class="text-muted">No recent audit results. Run an audit to see analysis.</p>
+                                {% endfor %}
+                            </div>
+                            
+                            <button class="btn btn-outline-primary w-100 mt-3">
+                                <i class="fas fa-file-alt me-2"></i>
+                                View Full Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Troubleshooting Tab -->
+        <div class="tab-pane fade {% if active_tab == 'troubleshoot' %}show active{% endif %}" id="troubleshoot" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-wrench me-2"></i>
+                                AI Network Troubleshooting
+                            </h5>
+                            <small class="text-muted">Intelligent problem detection and automated resolution</small>
+                        </div>
+                        <div class="card-body">
+                            <form id="troubleshootForm">
+                                {{ troubleshoot_form.hidden_tag() }}
+                                
+                                <div class="mb-3">
+                                    {{ troubleshoot_form.problem_domain.label(class="form-label") }}
+                                    {{ troubleshoot_form.problem_domain(class="form-select") }}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ troubleshoot_form.target_device.label(class="form-label") }}
+                                    {{ troubleshoot_form.target_device(class="form-select") }}
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary w-100" id="troubleshootBtn">
+                                    <i class="fas fa-search me-2"></i>
+                                    Start AI Diagnosis
+                                </button>
+                            </form>
+                            
+                            <!-- Troubleshooting Progress -->
+                            <div id="troubleshootProgress" class="mt-3" style="display: none;">
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 45%"></div>
+                                </div>
+                                <p class="text-muted small mt-2">Running network topology analysis...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">AI Diagnosis Results</h5>
+                            <small class="text-muted">Intelligent problem analysis and recommendations</small>
+                        </div>
+                        <div class="card-body" id="troubleshootResults">
+                            {% if recent_troubleshooting %}
+                            <div class="troubleshoot-result">
+                                <!-- Problem Detected -->
+                                <div class="p-3 border-start border-danger border-4 bg-danger bg-opacity-10 rounded mb-3">
+                                    <h6 class="text-danger fw-semibold">{{ recent_troubleshooting.problem_detected.title }}</h6>
+                                    <p class="small mb-1">{{ recent_troubleshooting.problem_detected.description }}</p>
+                                    <p class="small text-muted mb-0">Confidence: {{ recent_troubleshooting.problem_detected.confidence }}%</p>
+                                </div>
+
+                                <!-- Root Cause Analysis -->
+                                <div class="p-3 border-start border-primary border-4 bg-primary bg-opacity-10 rounded mb-3">
+                                    <h6 class="text-primary fw-semibold">{{ recent_troubleshooting.root_cause.title }}</h6>
+                                    <p class="small mb-2">{{ recent_troubleshooting.root_cause.description }}</p>
+                                    <ul class="small text-muted mb-0">
+                                        {% for cause in recent_troubleshooting.root_cause.causes %}
+                                        <li>{{ cause.description }} ({{ cause.probability }}% probability)</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+
+                                <!-- Recommended Actions -->
+                                <div class="p-3 border-start border-success border-4 bg-success bg-opacity-10 rounded">
+                                    <h6 class="text-success fw-semibold">Recommended Actions</h6>
+                                    <div class="d-grid gap-2 mt-2">
+                                        {% for action in recent_troubleshooting.recommendations %}
+                                        <button class="btn btn-outline-success btn-sm text-start">
+                                            <i class="fas fa-play me-2"></i>{{ action }}
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No troubleshooting results yet. Run AI diagnosis to see analysis.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Baseline Analysis Tab -->
+        <div class="tab-pane fade {% if active_tab == 'baseline' %}show active{% endif %}" id="baseline" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Network Baseline Analysis
+                            </h5>
+                            <small class="text-muted">Track configuration changes and performance drift</small>
+                        </div>
+                        <div class="card-body">
+                            <form id="baselineForm">
+                                {{ baseline_form.hidden_tag() }}
+                                
+                                <div class="mb-3">
+                                    {{ baseline_form.baseline_period.label(class="form-label") }}
+                                    {{ baseline_form.baseline_period(class="form-select") }}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ baseline_form.comparison_type.label(class="form-label") }}
+                                    {{ baseline_form.comparison_type(class="form-select") }}
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary w-100" id="baselineBtn">
+                                    <i class="fas fa-chart-line me-2"></i>
+                                    Analyze Baseline
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Baseline Analysis Results</h5>
+                            <small class="text-muted">Configuration and performance drift analysis</small>
+                        </div>
+                        <div class="card-body">
+                            {% if baseline_results %}
+                            <div class="baseline-results">
+                                <div class="row text-center mb-3">
+                                    <div class="col-6">
+                                        <h4 class="text-primary">{{ baseline_results.devices_analyzed }}</h4>
+                                        <small class="text-muted">Devices Analyzed</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <h4 class="text-warning">{{ baseline_results.changes_detected }}</h4>
+                                        <small class="text-muted">Changes Detected</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Configuration Drift</span>
+                                        <span>{{ "%.1f"|format(baseline_results.drift_percentage) }}%</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-warning" style="width: {{ baseline_results.drift_percentage }}%"></div>
+                                    </div>
+                                </div>
+                                
+                                <small class="text-muted">
+                                    Last analysis: {{ baseline_results.last_analysis.strftime('%Y-%m-%d %H:%M') if baseline_results.last_analysis else 'Never' }}
+                                </small>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No baseline analysis results yet. Run analysis to see drift data.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Config Backend Tab -->
+        <div class="tab-pane fade {% if active_tab == 'backend' %}show active{% endif %}" id="backend" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-database me-2"></i>
+                                Configuration Backend Management
+                            </h5>
+                            <small class="text-muted">Backup and restore network device configurations</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Backup Operations</h6>
+                                    <p class="text-muted">Create backups of device configurations</p>
+                                    <button class="btn btn-outline-primary">
+                                        <i class="fas fa-save me-2"></i>Start Backup
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Restore Operations</h6>
+                                    <p class="text-muted">Restore configurations from backups</p>
+                                    <button class="btn btn-outline-success">
+                                        <i class="fas fa-undo me-2"></i>Restore Config
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Operations JavaScript functionality (equivalent to React event handlers)
+
+class OperationsManager {
+    constructor() {
+        this.currentOperations = new Map();
+        this.initializeEventListeners();
+    }
+    
+    initializeEventListeners() {
+        // Form submission handlers
+        document.getElementById('auditForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.startAudit();
+        });
+        
+        document.getElementById('troubleshootForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.startTroubleshooting();
+        });
+        
+        document.getElementById('baselineForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.startBaselineAnalysis();
+        });
+    }
+    
+    async startAudit() {
+        const form = document.getElementById('auditForm');
+        const formData = new FormData(form);
+        const button = document.getElementById('auditBtn');
+        const progress = document.getElementById('auditProgress');
+        
+        // Show loading state (equivalent to React loading state)
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Starting Audit...';
+        progress.style.display = 'block';
+        
+        try {
+            const response = await fetch('/operations/run-audit', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                // Start progress polling (equivalent to React useEffect polling)
+                this.pollAuditProgress(result.operation_id);
+                showToast('Network audit started successfully', 'success');
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            showToast('Failed to start audit: ' + error.message, 'error');
+            this.resetAuditForm();
+        }
+    }
+    
+    async startTroubleshooting() {
+        const form = document.getElementById('troubleshootForm');
+        const formData = new FormData(form);
+        const button = document.getElementById('troubleshootBtn');
+        const progress = document.getElementById('troubleshootProgress');
+        
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
+        progress.style.display = 'block';
+        
+        try {
+            const response = await fetch('/operations/run-troubleshoot', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                // Update troubleshooting results (equivalent to React state update)
+                this.updateTroubleshootResults(result.result);
+                showToast('AI troubleshooting completed', 'success');
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            showToast('Troubleshooting failed: ' + error.message, 'error');
+        } finally {
+            this.resetTroubleshootForm();
+        }
+    }
+    
+    async startBaselineAnalysis() {
+        const form = document.getElementById('baselineForm');
+        const formData = new FormData(form);
+        const button = document.getElementById('baselineBtn');
+        
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
+        
+        try {
+            const response = await fetch('/operations/run-baseline', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                showToast('Baseline analysis completed', 'success');
+                // Refresh page to show new results
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            showToast('Baseline analysis failed: ' + error.message, 'error');
+        } finally {
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-chart-line me-2"></i>Analyze Baseline';
+        }
+    }
+    
+    async pollAuditProgress(operationId) {
+        // Progress polling (equivalent to React useEffect with interval)
+        const pollInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`/operations/api/audit-progress/${operationId}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    this.updateAuditProgress(result);
+                    
+                    if (result.operation_status === 'completed' || result.operation_status === 'failed') {
+                        clearInterval(pollInterval);
+                        this.onAuditComplete(result.operation_status);
+                    }
+                }
+            } catch (error) {
+                console.error('Error polling audit progress:', error);
+                clearInterval(pollInterval);
+                this.resetAuditForm();
+            }
+        }, 2000);
+        
+        // Store interval ID for cleanup
+        this.currentOperations.set(operationId, pollInterval);
+    }
+    
+    updateAuditProgress(progressData) {
+        // Update progress UI (equivalent to React progress state)
+        const progressBar = document.getElementById('auditProgressBar');
+        const progressText = document.getElementById('auditProgressText');
+        
+        if (progressBar) {
+            progressBar.style.width = progressData.percentage + '%';
+        }
+        
+        if (progressText) {
+            progressText.textContent = `Analyzing ${progressData.current_device || 'devices'}...`;
+        }
+    }
+    
+    onAuditComplete(status) {
+        // Handle audit completion (equivalent to React completion handler)
+        if (status === 'completed') {
+            showToast('Network audit completed successfully', 'success');
+            // Refresh audit results
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showToast('Network audit failed', 'error');
+        }
+        
+        this.resetAuditForm();
+    }
+    
+    updateTroubleshootResults(results) {
+        // Update troubleshooting results display (equivalent to React result state)
+        const resultsContainer = document.getElementById('troubleshootResults');
+        
+        // This would update the results display with new data
+        // For now, we'll show a success message and refresh
+        showToast('Troubleshooting results updated', 'info');
+    }
+    
+    resetAuditForm() {
+        // Reset audit form state (equivalent to React form reset)
+        const button = document.getElementById('auditBtn');
+        const progress = document.getElementById('auditProgress');
+        
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-play me-2"></i>Start Audit';
+        }
+        
+        if (progress) {
+            progress.style.display = 'none';
+        }
+    }
+    
+    resetTroubleshootForm() {
+        // Reset troubleshooting form state
+        const button = document.getElementById('troubleshootBtn');
+        const progress = document.getElementById('troubleshootProgress');
+        
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-search me-2"></i>Start AI Diagnosis';
+        }
+        
+        if (progress) {
+            progress.style.display = 'none';
+        }
+    }
+}
+
+// Initialize operations manager when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    window.operationsManager = new OperationsManager();
+    
+    // Set active tab based on URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('tab');
+    if (activeTab) {
+        const tabElement = document.getElementById(activeTab + '-tab');
+        if (tabElement) {
+            const tab = new bootstrap.Tab(tabElement);
+            tab.show();
+        }
+    }
+});
+</script>
+{% endblock %}
+```
+
+### Database Models (models/audit_result.py, models/baseline_analysis.py)
+```python
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+
+db = SQLAlchemy()
+
+class AuditResult(db.Model):
+    """Audit results model (equivalent to React audit data)"""
+    __tablename__ = 'audit_results'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    operation_id = db.Column(db.Integer, db.ForeignKey('network_operations.id'))
+    device_id = db.Column(db.Integer, db.ForeignKey('network_devices.id'), nullable=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    severity = db.Column(db.String(20), nullable=False)  # critical, medium, low, passed
+    status = db.Column(db.String(20), default='open')  # open, fixed, ignored
+    category = db.Column(db.String(50))  # security, compliance, performance
+    recommendation = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    device = db.relationship('NetworkDevice', backref='audit_results')
+    operation = db.relationship('NetworkOperation', backref='audit_results')
+
+class BaselineAnalysis(db.Model):
+    """Baseline analysis model"""
+    __tablename__ = 'baseline_analyses'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    operation_id = db.Column(db.Integer, db.ForeignKey('network_operations.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    analysis_type = db.Column(db.String(50), nullable=False)  # config, performance, security, topology
+    period = db.Column(db.String(20), nullable=False)  # 7d, 30d, 90d, custom
+    results = db.Column(db.JSON)
+    drift_detected = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+```
+
+### Service Classes (services/operations_service.py)
+```python
+import json
+from datetime import datetime, timedelta
+from models.network_device import NetworkDevice
+from models.audit_result import AuditResult
+from services.ai_service import AIService
+
+class OperationsService:
+    """Operations service for network operations (equivalent to React service calls)"""
+    
+    def start_audit(self, audit_config):
+        """Start network audit process"""
+        # This would start an asynchronous audit task
+        # For now, simulate with mock data
+        task_id = f"audit_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+        
+        # In real implementation, this would start a Celery task or similar
+        # and return the task ID for progress tracking
+        
+        return task_id
+    
+    def get_audit_progress(self, operation_id):
+        """Get audit progress status"""
+        # Mock progress data - in real implementation, this would
+        # query the actual task status
+        return {
+            'percentage': 75,
+            'current_device': 'R19-BRANCH-02',
+            'devices_completed': 6,
+            'total_devices': 8,
+            'status': 'running'
+        }
+    
+    def run_baseline_analysis(self, analysis_config):
+        """Run baseline analysis"""
+        # Mock baseline analysis results
+        return {
+            'devices_analyzed': 8,
+            'changes_detected': 4,
+            'drift_percentage': 15.2,
+            'significant_changes': [
+                {
+                    'device': 'R20-BRANCH-03',
+                    'change_type': 'SNMP community modified',
+                    'severity': 'medium'
+                },
+                {
+                    'device': 'R17-EDGE-02',
+                    'change_type': 'ACL rules updated',
+                    'severity': 'low'
+                }
+            ],
+            'analysis_timestamp': datetime.utcnow()
+        }
+```
+
+## Key Differences from React Implementation
+
+### State Management
+- **React**: Complex useState hooks for multiple operation states
+- **Python/Flask**: Database-backed operation tracking with progress polling
+
+### Real-time Updates
+- **React**: Live state updates with useEffect and intervals
+- **Python/Flask**: AJAX polling and WebSocket integration for real-time progress
+
+### Form Handling
+- **React**: Controlled components with validation
+- **Python/Flask**: Flask-WTF forms with server-side validation
+
+### Progress Tracking
+- **React**: Client-side progress state management
+- **Python/Flask**: Server-side operation status with API endpoints for progress
+
+### Tab Management
+- **React**: Client-side tab state with React components
+- **Python/Flask**: URL-based tab state with Bootstrap tabs
+
+This Python/Flask implementation provides equivalent functionality to the React Operations component while leveraging server-side processing and traditional web application patterns.
